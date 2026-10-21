@@ -4849,9 +4849,16 @@ namespace Span
                     var closeItem = new MenuFlyoutItem
                     {
                         Text = _loc.Get("Column_Close") ?? "Close this column",
-                        Icon = new FontIcon { Glyph = "\uE8BB" }
+                        Icon = new FontIcon { Glyph = "\uE8BB", FontSize = 14 },
+                        FontSize = 12,
+                        Padding = new Thickness(10, 2, 10, 2),
+                        MinHeight = 24
                     };
-                    closeItem.Click += (_, _) => column.IsColumnCollapsed = true;
+                    // \uC774 \uCEEC\uB7FC\uACFC \uADF8 \uC67C\uCABD(\uC0C1\uC704) \uCEEC\uB7FC\uC744 \uBAA8\uB450 \uC811\uB294\uB2E4.
+                    closeItem.Click += (_, _) =>
+                    {
+                        for (int i = 0; i <= idx && i < columns.Count; i++) columns[i].IsColumnCollapsed = true;
+                    };
                     flyout.Items.Add(closeItem);
                 }
                 if (canOpenParents)
@@ -4859,7 +4866,10 @@ namespace Span
                     var openItem = new MenuFlyoutItem
                     {
                         Text = _loc.Get("Column_OpenParents") ?? "Show parent columns",
-                        Icon = new FontIcon { Glyph = "\uE76B" }
+                        Icon = new FontIcon { Glyph = "\uE76B", FontSize = 14 },
+                        FontSize = 12,
+                        Padding = new Thickness(10, 2, 10, 2),
+                        MinHeight = 24
                     };
                     openItem.Click += (_, _) =>
                     {
