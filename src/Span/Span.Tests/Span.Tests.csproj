@@ -1,0 +1,139 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Windows10.0 TFM은 Windows.System.VirtualKey 등 WinRT 프로젝션 접근에 필요 (KeyBindingService 테스트용) -->
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <DefineConstants>$(DefineConstants);SPAN_TESTS</DefineConstants>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Platforms>x86;x64;ARM64</Platforms>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
+    <PackageReference Include="coverlet.collector" Version="6.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.6.4" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.6.4" />
+    <!-- ExtractOperation.cs의 CRC32 검증에 필요 (본 프로젝트를 직접 컴파일하므로 동일 참조 필요) -->
+    <PackageReference Include="System.IO.Hashing" Version="8.0.0" />
+  </ItemGroup>
+
+  <!--
+    Compile testable source files directly (avoids WinUI module initializer).
+    Files that reference WinUI types (TabItem, LocalizationService) are excluded.
+    IconService is provided by Stubs/IconServiceStub.cs for FileItem/FolderItem/DriveItem.
+  -->
+  <ItemGroup>
+    <!-- Models (pure C# + IconService stub) -->
+    <Compile Include="..\Span\Models\ViewMode.cs" Link="Sources\Models\ViewMode.cs" />
+    <Compile Include="..\Span\Models\PreviewType.cs" Link="Sources\Models\PreviewType.cs" />
+    <Compile Include="..\Span\Models\ActivePane.cs" Link="Sources\Models\ActivePane.cs" />
+    <Compile Include="..\Span\Models\IFileSystemItem.cs" Link="Sources\Models\IFileSystemItem.cs" />
+    <Compile Include="..\Span\Models\FileItem.cs" Link="Sources\Models\FileItem.cs" />
+    <Compile Include="..\Span\Models\FolderItem.cs" Link="Sources\Models\FolderItem.cs" />
+    <Compile Include="..\Span\Models\DriveItem.cs" Link="Sources\Models\DriveItem.cs" />
+    <Compile Include="..\Span\Models\ShellMenuItem.cs" Link="Sources\Models\ShellMenuItem.cs" />
+    <Compile Include="..\Span\Models\ShelfItem.cs" Link="Sources\Models\ShelfItem.cs" />
+    <Compile Include="..\Span\Models\CommandPaletteItem.cs" Link="Sources\Models\CommandPaletteItem.cs" />
+    <Compile Include="..\Span\Models\TabStateDto.cs" Link="Sources\Models\TabStateDto.cs" />
+    <Compile Include="..\Span\Models\ShortcutCommands.cs" Link="Sources\Models\ShortcutCommands.cs" />
+    <Compile Include="..\Span\Models\ConnectionInfo.cs" Link="Sources\Models\ConnectionInfo.cs" />
+    <Compile Include="..\Span\Models\CloudState.cs" Link="Sources\Models\CloudState.cs" />
+    <Compile Include="..\Span\Models\SearchQuery.cs" Link="Sources\Models\SearchQuery.cs" />
+    <Compile Include="..\Span\Models\ActionLogEntry.cs" Link="Sources\Models\ActionLogEntry.cs" />
+    <!-- Helpers (pure C#) -->
+    <Compile Include="..\Span\Helpers\NaturalStringComparer.cs" Link="Sources\Helpers\NaturalStringComparer.cs" />
+    <Compile Include="..\Span\Helpers\ViewModeExtensions.cs" Link="Sources\Helpers\ViewModeExtensions.cs" />
+    <Compile Include="..\Span\Helpers\SearchQueryParser.cs" Link="Sources\Helpers\SearchQueryParser.cs" />
+    <Compile Include="..\Span\Helpers\WildcardRegex.cs" Link="Sources\Helpers\WildcardRegex.cs" />
+    <Compile Include="..\Span\Helpers\LaunchArguments.cs" Link="Sources\Helpers\LaunchArguments.cs" />
+    <Compile Include="..\Span\Helpers\PathTextFormatter.cs" Link="Sources\Helpers\PathTextFormatter.cs" />
+    <Compile Include="..\Span\Helpers\FolderContextLauncher.cs" Link="Sources\Helpers\FolderContextLauncher.cs" />
+    <Compile Include="..\Span\Helpers\HangulSearchHelper.cs" Link="Sources\Helpers\HangulSearchHelper.cs" />
+    <Compile Include="..\Span\Helpers\DebugLogger.cs" Link="Sources\Helpers\DebugLogger.cs" />
+    <Compile Include="..\Span\Helpers\ZipEntryNameEncoding.cs" Link="Sources\Helpers\ZipEntryNameEncoding.cs" />
+    <Compile Include="..\Span\Helpers\ArchivePathHelper.cs" Link="Sources\Helpers\ArchivePathHelper.cs" />
+    <Compile Include="..\Span\Helpers\UncPathHelper.cs" Link="Sources\Helpers\UncPathHelper.cs" />
+    <Compile Include="..\Span\Helpers\FileVisibility.cs" Link="Sources\Helpers\FileVisibility.cs" />
+    <!-- Issue #66 — OtterZip 네이티브 엔진 바인딩 (WinUI 의존 없음) -->
+    <Compile Include="..\Span\Services\Archive\OtterZipNative.cs" Link="Sources\Services\Archive\OtterZipNative.cs" />
+    <Compile Include="..\Span\Services\Archive\OtterZipArchiveHandle.cs" Link="Sources\Services\Archive\OtterZipArchiveHandle.cs" />
+    <Compile Include="..\Span\Services\Archive\OtterZipEngine.cs" Link="Sources\Services\Archive\OtterZipEngine.cs" />
+    <Compile Include="..\Span\Services\Archive\ArchiveEntryStaging.cs" Link="Sources\Services\Archive\ArchiveEntryStaging.cs" />
+    <Compile Include="..\Span\Helpers\ArchivePreviewResolver.cs" Link="Sources\Helpers\ArchivePreviewResolver.cs" />
+    <Compile Include="..\Span\Helpers\FontScaleService.cs" Link="Sources\Helpers\FontScaleService.cs" />
+    <!-- Services - file operations (pure C#) -->
+    <Compile Include="..\Span\Services\FileOperations\OperationResult.cs" Link="Sources\Services\OperationResult.cs" />
+    <Compile Include="..\Span\Services\FileOperations\FileOperationProgress.cs" Link="Sources\Services\FileOperationProgress.cs" />
+    <Compile Include="..\Span\Services\FileOperations\FileOperationHistory.cs" Link="Sources\Services\FileOperationHistory.cs" />
+    <Compile Include="..\Span\Services\FileOperations\IFileOperation.cs" Link="Sources\Services\IFileOperation.cs" />
+    <Compile Include="..\Span\Services\FileOperations\CompletedOperationWrapper.cs" Link="Sources\Services\CompletedOperationWrapper.cs" />
+    <!-- Services - file operations (shared helpers) -->
+    <Compile Include="..\Span\Services\FileOperations\FileOperationHelpers.cs" Link="Sources\Services\FileOperationHelpers.cs" />
+    <!-- Services - file operations (integration testable) -->
+    <Compile Include="..\Span\Services\FileOperations\CopyFileOperation.cs" Link="Sources\Services\CopyFileOperation.cs" />
+    <Compile Include="..\Span\Services\FileOperations\MoveFileOperation.cs" Link="Sources\Services\MoveFileOperation.cs" />
+    <Compile Include="..\Span\Services\FileOperations\RenameFileOperation.cs" Link="Sources\Services\RenameFileOperation.cs" />
+    <Compile Include="..\Span\Services\FileOperations\NewFolderOperation.cs" Link="Sources\Services\NewFolderOperation.cs" />
+    <Compile Include="..\Span\Services\FileOperations\NewFileOperation.cs" Link="Sources\Services\NewFileOperation.cs" />
+    <Compile Include="..\Span\Services\FileOperations\BatchRenameOperation.cs" Link="Sources\Services\BatchRenameOperation.cs" />
+    <Compile Include="..\Span\Services\FileOperations\DeleteFileOperation.cs" Link="Sources\Services\DeleteFileOperation.cs" />
+    <Compile Include="..\Span\Services\FileOperations\ShellDeleteWithProgress.cs" Link="Sources\Services\ShellDeleteWithProgress.cs" />
+    <Compile Include="..\Span\Services\FileOperations\CompressOperation.cs" Link="Sources\Services\CompressOperation.cs" />
+    <Compile Include="..\Span\Services\FileOperations\ExtractOperation.cs" Link="Sources\Services\ExtractOperation.cs" />
+    <!-- Services - folder size (pure C#) -->
+    <Compile Include="..\Span\Services\FolderSizeService.cs" Link="Sources\Services\FolderSizeService.cs" />
+    <!-- Services - cache (pure C#) -->
+    <Compile Include="..\Span\Services\FolderContentCache.cs" Link="Sources\Services\FolderContentCache.cs" />
+    <!-- Services - routing (pure C#) -->
+    <Compile Include="..\Span\Services\FileSystemRouter.cs" Link="Sources\Services\FileSystemRouter.cs" />
+    <Compile Include="..\Span\Services\IFileSystemProvider.cs" Link="Sources\Services\IFileSystemProvider.cs" />
+    <!-- Services - file watcher (pure C#) -->
+    <Compile Include="..\Span\Services\FileSystemWatcherService.cs" Link="Sources\Services\FileSystemWatcherService.cs" />
+    <!-- Services - action log (pure C#) -->
+    <Compile Include="..\Span\Services\IActionLogService.cs" Link="Sources\Services\IActionLogService.cs" />
+    <Compile Include="..\Span\Services\ActionLogService.cs" Link="Sources\Services\ActionLogService.cs" />
+    <!-- Services - settings interface + Shelf (Shelf는 partial로 WinUI 의존 분리) -->
+    <Compile Include="..\Span\Services\ISettingsService.cs" Link="Sources\Services\ISettingsService.cs" />
+    <Compile Include="..\Span\Services\ShelfService.cs" Link="Sources\Services\ShelfService.cs" />
+    <!-- Services - key bindings (Windows.System.VirtualKey 사용 — Windows SDK만 필요) -->
+    <Compile Include="..\Span\Services\KeyBindingService.cs" Link="Sources\Services\KeyBindingService.cs" />
+    <!-- Views - pure logic helpers (no WinUI) -->
+    <Compile Include="..\Span\Views\LogEntryDisplayHelper.cs" Link="Sources\Views\LogEntryDisplayHelper.cs" />
+    <!-- Localization data (partial class, provides Entries tuple for L() fallback) -->
+    <Compile Include="..\Span\Services\LocalizationData.cs" Link="Sources\Services\LocalizationData.cs" />
+    <!-- Helpers - P/Invoke (pure C#) -->
+    <Compile Include="..\Span\Helpers\NativeMethods.cs" Link="Sources\Helpers\NativeMethods.cs" />
+    <!-- Phase 1 — 썸네일 격리 (테스트 가능 부분만) -->
+    <Compile Include="..\Span\Services\Thumbnails\IpcProtocol.cs" Link="Sources\Services\Thumbnails\IpcProtocol.cs" />
+    <Compile Include="..\Span\Services\Thumbnails\ThumbnailDiskCache.cs" Link="Sources\Services\Thumbnails\ThumbnailDiskCache.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
+  </ItemGroup>
+
+  <!-- Issue #66 — 네이티브 엔진 테스트용. DllImportSearchPath.AssemblyDirectory로 찾으므로
+       테스트 어셈블리 옆에 있어야 한다. x64 전용이며, 다른 플랫폼에서는 엔진 테스트가
+       "사용 불가"를 확인하는 경로로 자동 전환된다. -->
+  <ItemGroup Condition="'$(Platform)' == 'x64'">
+    <Content Include="..\..\..\third_party\otterzip\x64\otterzip_ffi.dll">
+      <Link>otterzip_ffi.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Fixtures\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

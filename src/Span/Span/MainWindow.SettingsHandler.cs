@@ -1,0 +1,1525 @@
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.Extensions.DependencyInjection;
+using Span.Helpers;
+using Span.Models;
+using Span.ViewModels;
+using System;
+using System.Linq;
+using System.Runtime.CompilerServices;
+
+namespace Span
+{
+    /// <summary>
+    /// MainWindow의 설정 처리 부분 클래스.
+    /// 테마 적용(Light/Dark/커스텀 테마 오버라이드), 폰트 패밀리·밀도 설정,
+    /// 숨김 파일·체크박스·즐겨찾기 트리 표시 전환,
+    /// Miller Column 클릭 동작 설정, 미리보기 패널 활성화,
+    /// 로컬라이제이션 문자열 적용 등 설정 변경 이벤트 처리를 담당한다.
+    /// </summary>
+    public sealed partial class MainWindow
+    {
+        // =================================================================
+        //  #region Theme Application
+        // =================================================================
+
+        /// <summary>
+        /// 테마를 적용한다. Light/Dark/System/커스텀 테마를 처리하고,
+        /// 커스텀 테마인 경우 색상 오버라이드를 적용한다.
+        /// </summary>
+        private void ApplyTheme(string theme)
+        {
+            bool isCustom = _customThemes.Contains(theme);
+
+            if (this.Content is FrameworkElement root)
+            {
+                var targetTheme = theme switch
+                {
+                    "light" => ElementTheme.Light,
+                    "dark" => ElementTheme.Dark,
+                    _ when isCustom && theme == "solarized-light" => ElementTheme.Light,
+                    _ when isCustom => ElementTheme.Dark, // 커스텀 테마는 Dark 기반
+                    _ => ElementTheme.Default
+                };
+
+                // ★ 중요: {ThemeResource} 바인딩 재평가는 **RequestedTheme 변경**이 트리거함.
+                //   dict 객체 교체만으로는 재평가 안 됨. 따라서 dict 작업은 반드시
+                //   "반대 테마 → dict 조작 → 대상 테마" 순서 안에 넣어야 함.
+                if (isCustom)
+                {
+                    bool isLightCustom = theme == "solarized-light";
+                    // 1) 반대 테마로 전환 (기존 리소스 해제 + 반대 테마로 재평가)
+                    root.RequestedTheme = isLightCustom ? ElementTheme.Dark : ElementTheme.Light;
+                    // 2) 커스텀 테마 팔레트 주입
+                    ApplyCustomThemeOverrides(root, theme);
+                    // 3) 사용자 커스텀 액센트 override (팔레트 액센트 위에 덮어씀)
+                    TryApplyCustomAccentOverride(root, theme);
+                    // 4) 대상 테마로 복귀 → 모든 {ThemeResource} 바인딩이 새 dict 값으로 재평가
+                    root.RequestedTheme = isLightCustom ? ElementTheme.Light : ElementTheme.Dark;
+                }
+                else
+                {
+                    // 비커스텀: 커스텀 팔레트 제거 + 커스텀 액센트(있으면) 주입
+                    ApplyCustomThemeOverrides(root, theme);
+                    TryApplyCustomAccentOverride(root, theme);
+                    // 반대 → 대상 토글로 {ThemeResource} 바인딩 강제 재평가
+                    root.RequestedTheme = targetTheme == ElementTheme.Light
+                        ? ElementTheme.Dark : ElementTheme.Light;
+                    root.RequestedTheme = targetTheme;
+                }
+            }
+
+            // PathHighlight 캐시 무효화 (테마 색상 변경 반영)
+            ViewModels.FileSystemViewModel.InvalidatePathHighlightCache();
+
+            // 아이콘 색상 테마 보정 (라이트 테마에서 더 진한 색상 사용)
+            bool isLightForIcons = isCustom
+                ? theme == "solarized-light"
+                : theme == "light" || (theme == "system" && App.Current.RequestedTheme == ApplicationTheme.Light);
+            Services.IconService.Current?.UpdateTheme(isLightForIcons);
+
+            // 캡션 버튼 색상
+            var titleBar = this.AppWindow.TitleBar;
+
+            if (isCustom)
+            {
+                var cap = GetCaptionColors(theme);
+                titleBar.ButtonForegroundColor = cap.fg;
+                titleBar.ButtonHoverForegroundColor = cap.hoverFg;
+                titleBar.ButtonHoverBackgroundColor = cap.hoverBg;
+                titleBar.ButtonPressedForegroundColor = cap.pressedFg;
+                titleBar.ButtonPressedBackgroundColor = cap.pressedBg;
+                titleBar.ButtonInactiveForegroundColor = cap.inactiveFg;
+            }
+            else
+            {
+                bool isLight = theme == "light" ||
+                               (theme == "system" && App.Current.RequestedTheme == ApplicationTheme.Light);
+
+                if (isLight)
+                {
+                    titleBar.ButtonForegroundColor = Windows.UI.Color.FromArgb(255, 26, 26, 26);
+                    titleBar.ButtonHoverForegroundColor = Windows.UI.Color.FromArgb(255, 0, 0, 0);
+                    titleBar.ButtonHoverBackgroundColor = Windows.UI.Color.FromArgb(20, 0, 0, 0);
+                    titleBar.ButtonPressedForegroundColor = Windows.UI.Color.FromArgb(255, 0, 0, 0);
+                    titleBar.ButtonPressedBackgroundColor = Windows.UI.Color.FromArgb(40, 0, 0, 0);
+                    titleBar.ButtonInactiveForegroundColor = Windows.UI.Color.FromArgb(255, 140, 140, 140);
+                }
+                else
+                {
+                    titleBar.ButtonForegroundColor = Windows.UI.Color.FromArgb(255, 255, 255, 255);
+                    titleBar.ButtonHoverForegroundColor = Windows.UI.Color.FromArgb(255, 255, 255, 255);
+                    titleBar.ButtonHoverBackgroundColor = Windows.UI.Color.FromArgb(15, 255, 255, 255);
+                    titleBar.ButtonPressedForegroundColor = Windows.UI.Color.FromArgb(255, 255, 255, 255);
+                    titleBar.ButtonPressedBackgroundColor = Windows.UI.Color.FromArgb(20, 255, 255, 255);
+                    titleBar.ButtonInactiveForegroundColor = Windows.UI.Color.FromArgb(255, 120, 120, 120);
+                }
+            }
+            titleBar.ButtonBackgroundColor = Windows.UI.Color.FromArgb(0, 0, 0, 0);
+            titleBar.ButtonInactiveBackgroundColor = Windows.UI.Color.FromArgb(0, 0, 0, 0);
+
+            // DWM 윈도우 보더 색상 → 테마 배경색에 맞춰 최대화 시 흰색 라인 방지
+            UpdateDwmBorderColor(theme, isCustom);
+
+            // 코드-비하인드에서 생성된 캐시 요소들 (인디케이터, 버튼 등) 테마 색상 갱신
+            RefreshCachedAccentColors();
+        }
+
+        /// <summary>
+        /// 테마 전환 후 코드-비하인드에서 캐시된 모든 accent 색상 요소를 갱신한다.
+        /// 인디케이터, 버튼 아이콘 등 {ThemeResource} 바인딩이 아닌 직접 생성 요소 대상.
+        /// </summary>
+        private void RefreshCachedAccentColors()
+        {
+            try
+            {
+                var accentBrush = GetThemeBrush("SpanAccentBrush");
+                var accentDimBrush = GetThemeBrush("SpanAccentDimBrush");
+
+                // 캐시된 밀러컬럼 폴더 선택 인디케이터 색상 갱신
+                foreach (var indicator in _pathIndicators.Values)
+                {
+                    indicator.Background = accentBrush;
+                }
+
+                // 밀러 컬럼 Border 색상 갱신
+                // BoolToBrushConverter는 DependencyObject(not FrameworkElement)이므로
+                // {ThemeResource}가 테마 변경 시 자동 갱신되지 않음 → 수동 갱신 필수
+                if (RootGrid.Resources.TryGetValue("BoolToBrushConverter", out var conv)
+                    && conv is Helpers.BoolToBrushConverter btb)
+                {
+                    btb.TrueBrush = accentDimBrush;
+                }
+
+                // 모든 탭의 IsActive 바인딩 재평가 (토글로 PropertyChanged 강제 발생)
+                // border.BorderBrush를 직접 설정하면 {Binding}이 파괴되므로 절대 금지
+                foreach (var tab in ViewModel.Tabs)
+                {
+                    if (tab.Explorer is ViewModels.ExplorerViewModel explorer)
+                    {
+                        var activeCol = explorer.Columns.FirstOrDefault(c => c.IsActive);
+                        foreach (var col in explorer.Columns)
+                            col.IsActive = false;
+                        if (activeCol != null)
+                            activeCol.IsActive = true;
+                    }
+                }
+                if (ViewModel.RightExplorer is ViewModels.ExplorerViewModel rightExpl)
+                {
+                    var activeRight = rightExpl.Columns.FirstOrDefault(c => c.IsActive);
+                    foreach (var col in rightExpl.Columns)
+                        col.IsActive = false;
+                    if (activeRight != null)
+                        activeRight.IsActive = true;
+                }
+
+                // 버튼 아이콘 색상 갱신
+                UpdatePreviewButtonState();
+                UpdateSplitViewButtonState();
+
+                // SettingsModeView 사이드바 선택 항목 배경 (코드-비하인드 직접 할당이라 수동 갱신 필요)
+                SettingsView?.RefreshSelectedNavItemAccent();
+            }
+            catch (Exception ex)
+            {
+                Helpers.DebugLogger.Log($"[MainWindow] RefreshCachedAccentColors error: {ex.Message}");
+            }
+        }
+
+        // RefreshMillerColumnBorders 삭제됨:
+        // border.BorderBrush를 직접 설정하면 {Binding IsActive, Converter=...}가 파괴됨.
+        // 대신 IsActive 토글로 바인딩 재평가 방식 사용 (RefreshCachedAccentColors 참조).
+
+        /// <summary>
+        /// DWM 윈도우 프레임 보더 색상을 현재 테마 배경에 맞춘다.
+        /// 최대화 시 1px 흰색 라인이 보이는 WinUI 3 이슈를 방지한다.
+        /// </summary>
+        private void UpdateDwmBorderColor(string theme, bool isCustom)
+        {
+            if (_hwnd == IntPtr.Zero) return;
+
+            Windows.UI.Color bgColor;
+            if (isCustom)
+            {
+                var p = GetThemePalette(theme);
+                bgColor = p.bgMica;
+            }
+            else
+            {
+                bool isLight = theme == "light" ||
+                               (theme == "system" && App.Current.RequestedTheme == ApplicationTheme.Light);
+                bgColor = isLight
+                    ? Windows.UI.Color.FromArgb(255, 243, 243, 243)   // #F3F3F3
+                    : Windows.UI.Color.FromArgb(255, 32, 32, 32);     // #202020
+            }
+
+            // COLORREF = 0x00BBGGRR (BGR 순서)
+            int colorRef = bgColor.R | (bgColor.G << 8) | (bgColor.B << 16);
+            Helpers.NativeMethods.DwmSetWindowAttribute(
+                _hwnd, Helpers.NativeMethods.DWMWA_BORDER_COLOR, ref colorRef, sizeof(int));
+            // 캡션(타이틀바) 색상도 동일하게 설정 — 최대화 시 상단 흰색 라인 방지
+            Helpers.NativeMethods.DwmSetWindowAttribute(
+                _hwnd, Helpers.NativeMethods.DWMWA_CAPTION_COLOR, ref colorRef, sizeof(int));
+        }
+
+        internal static void ApplyCustomThemeOverrides(FrameworkElement root, string theme)
+        {
+            if (!_customThemes.Contains(theme))
+            {
+                // root 레벨 Dark/Light 오버라이드 제거 → App.xaml 원본 dict가 자동 적용
+                root.Resources.ThemeDictionaries.Remove("Dark");
+                root.Resources.ThemeDictionaries.Remove("Light");
+                return;
+            }
+
+            var p = GetThemePalette(theme);
+
+            // 커스텀 오버라이드만 설정 (미설정 키는 App.xaml Dark dict에서 fallback)
+            var darkDict = new ResourceDictionary();
+
+            // Color 리소스
+            darkDict["SpanBgMica"] = p.bgMica;
+            darkDict["SpanBgLayer1"] = p.bgLayer1;
+            darkDict["SpanBgLayer2"] = p.bgLayer2;
+            darkDict["SpanBgLayer3"] = p.bgLayer3;
+            darkDict["SpanAccent"] = p.accent;
+            darkDict["SpanAccentHover"] = p.accentHover;
+            darkDict["SpanTextPrimary"] = p.textPri;
+            darkDict["SpanTextSecondary"] = p.textSec;
+            darkDict["SpanTextTertiary"] = p.textTer;
+            darkDict["SpanBgSelected"] = p.bgSel;
+            darkDict["SpanBorderSubtle"] = p.border;
+
+            // Brush 리소스
+            darkDict["SpanBgMicaBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(p.bgMica);
+            darkDict["SpanBgLayer1Brush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(p.bgLayer1);
+            darkDict["SpanBgLayer2Brush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(p.bgLayer2);
+            darkDict["SpanBgLayer3Brush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(p.bgLayer3);
+            darkDict["SpanAccentBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(p.accent);
+            darkDict["SpanAccentHoverBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(p.accentHover);
+            darkDict["SpanTextPrimaryBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(p.textPri);
+            darkDict["SpanTextSecondaryBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(p.textSec);
+            darkDict["SpanTextTertiaryBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(p.textTer);
+            darkDict["SpanBgSelectedBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(p.bgSel);
+            darkDict["SpanBorderSubtleBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(p.border);
+
+            // AccentDim = accent 색상에 70% 투명도 (탭/밀러컬럼 테두리용)
+            var accentDim = Windows.UI.Color.FromArgb(0xB3, p.accent.R, p.accent.G, p.accent.B);
+            darkDict["SpanAccentDimColor"] = accentDim;
+            darkDict["SpanAccentDimBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentDim);
+
+            // Accent-tinted selection (Windows Explorer 스타일 통일)
+            var accentHover = Windows.UI.Color.FromArgb(0x0F, p.accent.R, p.accent.G, p.accent.B);
+            var accentActive = Windows.UI.Color.FromArgb(0x1A, p.accent.R, p.accent.G, p.accent.B);
+            var accentSelected = Windows.UI.Color.FromArgb(0x25, p.accent.R, p.accent.G, p.accent.B);
+            var accentSelHover = Windows.UI.Color.FromArgb(0x30, p.accent.R, p.accent.G, p.accent.B);
+            var pathHighlight = Windows.UI.Color.FromArgb(0x20, p.accent.R, p.accent.G, p.accent.B);
+            darkDict["SpanBgHoverBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentHover);
+            darkDict["SpanBgActiveBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentActive);
+            darkDict["SpanBgSelectedBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentSelected);
+            darkDict["SpanBgSelectedHoverBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentSelHover);
+            darkDict["SpanPathHighlightBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(pathHighlight);
+
+            // ListView/GridView 선택 색상 (accent 기반 통일)
+            darkDict["ListViewItemBackgroundSelected"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentSelected);
+            darkDict["ListViewItemBackgroundSelectedPointerOver"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentSelHover);
+            darkDict["ListViewItemBackgroundSelectedPressed"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentActive);
+            darkDict["GridViewItemBackgroundSelected"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentSelected);
+            darkDict["GridViewItemBackgroundSelectedPointerOver"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentSelHover);
+            darkDict["GridViewItemBackgroundSelectedPressed"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentActive);
+
+            // WinUI 3 시스템 컨트롤 accent 오버라이드 (NavigationView 인디케이터, ToggleSwitch 등)
+            var accentBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(p.accent);
+            darkDict["NavigationViewSelectionIndicatorForeground"] = accentBrush;
+            darkDict["ListViewItemSelectionIndicatorBrush"] = accentBrush;
+            darkDict["AccentFillColorDefaultBrush"] = accentBrush;
+            darkDict["AccentFillColorSecondaryBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(p.accentHover);
+            darkDict["AccentFillColorTertiaryBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentDim);
+
+            // Global FocusVisual: 테마 액센트 톤 포커스 링
+            darkDict["SystemControlFocusVisualPrimaryBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentDim);
+            darkDict["SystemControlFocusVisualSecondaryBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
+
+            // TextBox/AutoSuggestBox 포커스 하단 라인 색상
+            darkDict["TextControlBorderBrushFocused"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(p.accent);
+
+            var dictKey = theme == "solarized-light" ? "Light" : "Dark";
+            root.Resources.ThemeDictionaries[dictKey] = darkDict;
+        }
+
+        /// <summary>
+        /// 현재 저장된 Theme 값으로 ApplyTheme을 재호출한다 (커스텀 액센트 toggle/color 변경 시 사용).
+        /// </summary>
+        public void ReapplyCurrentTheme()
+        {
+            try
+            {
+                var settings = (App.Current as App)?.Services?.GetService<Services.SettingsService>();
+                var theme = settings?.Theme ?? "system";
+                Helpers.DebugLogger.Log($"[ReapplyCurrentTheme] theme={theme} UseCustomAccent={settings?.UseCustomAccent} Color={settings?.CustomAccentColor}");
+                ApplyTheme(theme);
+                RefreshCachedAccentColors();
+                Helpers.DebugLogger.Log("[ReapplyCurrentTheme] completed");
+            }
+            catch (Exception ex)
+            {
+                Helpers.DebugLogger.Log($"[MainWindow] ReapplyCurrentTheme error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// RequestedTheme을 반대 → 원래로 토글해서 모든 {ThemeResource} 바인딩을 강제 재평가한다.
+        /// override 리소스를 늦게 주입한 경우, 이미 바인딩된 컨트롤이 신규 리소스를 읽게 하기 위함.
+        /// Default(ElementTheme.Default)는 Light/Dark로 먼저 설정 후 다시 Default로 복귀.
+        /// </summary>
+        private static void ForceThemeReevaluation(FrameworkElement root, ElementTheme target)
+        {
+            if (target == ElementTheme.Default)
+            {
+                // system 모드: 현재 App 테마에 따라 결정된 값으로 한번, 반대로 한번, 다시 Default로 복귀
+                var current = App.Current.RequestedTheme == ApplicationTheme.Light
+                    ? ElementTheme.Light : ElementTheme.Dark;
+                var opposite = current == ElementTheme.Light ? ElementTheme.Dark : ElementTheme.Light;
+                root.RequestedTheme = opposite;
+                root.RequestedTheme = ElementTheme.Default;
+            }
+            else
+            {
+                var opposite = target == ElementTheme.Light ? ElementTheme.Dark : ElementTheme.Light;
+                root.RequestedTheme = opposite;
+                root.RequestedTheme = target;
+            }
+        }
+
+        /// <summary>
+        /// SettingsService의 UseCustomAccent/CustomAccentColor 값에 따라 액센트 override를 적용한다.
+        /// </summary>
+        private void TryApplyCustomAccentOverride(FrameworkElement root, string theme)
+        {
+            try
+            {
+                var settings = (App.Current as App)?.Services?.GetService<Services.SettingsService>();
+                if (settings == null)
+                {
+                    Helpers.DebugLogger.Log("[TryApplyCustomAccentOverride] settings service null");
+                    return;
+                }
+                Helpers.DebugLogger.Log($"[TryApplyCustomAccentOverride] UseCustomAccent={settings.UseCustomAccent} Color='{settings.CustomAccentColor}' theme={theme}");
+                if (!settings.UseCustomAccent) return;
+                if (!TryParseAccentHex(settings.CustomAccentColor, out var accent))
+                {
+                    Helpers.DebugLogger.Log($"[TryApplyCustomAccentOverride] Hex parse failed: '{settings.CustomAccentColor}'");
+                    return;
+                }
+                ApplyAccentOverride(root, accent, theme);
+            }
+            catch (Exception ex)
+            {
+                Helpers.DebugLogger.Log($"[MainWindow] TryApplyCustomAccentOverride error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 사용자 지정 액센트 컬러를 현재 테마 위에 덮어쓴다.
+        /// 액센트 기반 파생 리소스(Dim/Hover/Active/Selected/PathHighlight + ListView/GridView 선택
+        /// + NavigationView/AccentFill/FocusVisual/TextControl)를 일괄 갱신한다.
+        /// ApplyCustomThemeOverrides 호출 후 + RequestedTheme 토글 후에 호출해야 한다.
+        /// </summary>
+        internal static void ApplyAccentOverride(FrameworkElement root, Windows.UI.Color accent, string theme)
+        {
+            Helpers.DebugLogger.Log($"[ApplyAccentOverride] theme={theme} accent=#{accent.R:X2}{accent.G:X2}{accent.B:X2}");
+
+            // 대상 ThemeDictionary 키: solarized-light는 Light, 나머지 (system/light/dark/커스텀)는
+            // 현재 root.RequestedTheme에 따른다. light가 아니면 Dark.
+            string dictKey;
+            if (theme == "light" || theme == "solarized-light")
+                dictKey = "Light";
+            else if (theme == "dark" || _customThemes.Contains(theme))
+                dictKey = "Dark";
+            else // system
+                dictKey = App.Current.RequestedTheme == ApplicationTheme.Light ? "Light" : "Dark";
+
+            // ★ ApplyCustomThemeOverrides와 동일 패턴: 기존 키를 새 dict에 복사한 뒤 교체
+            // (기존 dict 수정만으로는 WinUI 3이 {ThemeResource} 바인딩 재평가를 트리거하지 않음)
+            var dict = new ResourceDictionary();
+            if (root.Resources.ThemeDictionaries.TryGetValue(dictKey, out var existingObj)
+                && existingObj is ResourceDictionary existing)
+            {
+                foreach (var kv in existing) dict[kv.Key] = kv.Value;
+                Helpers.DebugLogger.Log($"[ApplyAccentOverride] copied {dict.Count} keys from existing {dictKey} dict");
+            }
+            else
+            {
+                Helpers.DebugLogger.Log($"[ApplyAccentOverride] no existing {dictKey} dict at root, starting empty");
+            }
+
+            var accentHover = DeriveAccentHover(accent);
+            var accentDim = Windows.UI.Color.FromArgb(0xB3, accent.R, accent.G, accent.B);
+            var bgHover = Windows.UI.Color.FromArgb(0x0F, accent.R, accent.G, accent.B);
+            var bgActive = Windows.UI.Color.FromArgb(0x1A, accent.R, accent.G, accent.B);
+            var bgSelected = Windows.UI.Color.FromArgb(0x25, accent.R, accent.G, accent.B);
+            var bgSelHover = Windows.UI.Color.FromArgb(0x30, accent.R, accent.G, accent.B);
+            var pathHighlight = Windows.UI.Color.FromArgb(0x20, accent.R, accent.G, accent.B);
+
+            dict["SpanAccent"] = accent;
+            dict["SpanAccentBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accent);
+            dict["SpanAccentHover"] = accentHover;
+            dict["SpanAccentHoverBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentHover);
+            dict["SpanAccentDimColor"] = accentDim;
+            dict["SpanAccentDimBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentDim);
+            dict["SpanBgHoverBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(bgHover);
+            dict["SpanBgActiveBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(bgActive);
+            dict["SpanBgSelectedBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(bgSelected);
+            dict["SpanBgSelectedHoverBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(bgSelHover);
+            dict["SpanPathHighlightBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(pathHighlight);
+
+            dict["ListViewItemBackgroundSelected"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(bgSelected);
+            dict["ListViewItemBackgroundSelectedPointerOver"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(bgSelHover);
+            dict["ListViewItemBackgroundSelectedPressed"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(bgActive);
+            dict["GridViewItemBackgroundSelected"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(bgSelected);
+            dict["GridViewItemBackgroundSelectedPointerOver"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(bgSelHover);
+            dict["GridViewItemBackgroundSelectedPressed"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(bgActive);
+
+            var accentBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(accent);
+            dict["NavigationViewSelectionIndicatorForeground"] = accentBrush;
+            dict["ListViewItemSelectionIndicatorBrush"] = accentBrush;
+            dict["AccentFillColorDefaultBrush"] = accentBrush;
+            dict["AccentFillColorSecondaryBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentHover);
+            dict["AccentFillColorTertiaryBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentDim);
+
+            dict["SystemControlFocusVisualPrimaryBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentDim);
+            dict["SystemControlFocusVisualSecondaryBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
+
+            dict["TextControlBorderBrushFocused"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accent);
+
+            // ── SystemAccentColor 계열 (WinUI 3 시스템 컨트롤 대부분이 참조) ──
+            var accentLight1 = AdjustLightness(accent, +0.15);
+            var accentLight2 = AdjustLightness(accent, +0.30);
+            var accentLight3 = AdjustLightness(accent, +0.45);
+            var accentDark1 = AdjustLightness(accent, -0.15);
+            var accentDark2 = AdjustLightness(accent, -0.30);
+            var accentDark3 = AdjustLightness(accent, -0.45);
+
+            dict["SystemAccentColor"] = accent;
+            dict["SystemAccentColorLight1"] = accentLight1;
+            dict["SystemAccentColorLight2"] = accentLight2;
+            dict["SystemAccentColorLight3"] = accentLight3;
+            dict["SystemAccentColorDark1"] = accentDark1;
+            dict["SystemAccentColorDark2"] = accentDark2;
+            dict["SystemAccentColorDark3"] = accentDark3;
+
+            // AccentFillColor* Color 버전 (Brush만이 아니라 Color도 필요)
+            dict["AccentFillColorDefault"] = accent;
+            dict["AccentFillColorSecondary"] = accentHover;
+            dict["AccentFillColorTertiary"] = accentDim;
+
+            // AccentTextFillColor* (하이퍼링크 등)
+            var accentText = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentLight2);
+            dict["AccentTextFillColorPrimaryBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentLight3);
+            dict["AccentTextFillColorSecondaryBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentLight2);
+            dict["AccentTextFillColorTertiaryBrush"] = accentText;
+            dict["AccentTextFillColorDisabledBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentDim);
+
+            // SystemFillColorAttention (InfoBar "information"/뱃지 등)
+            dict["SystemFillColorAttentionBrush"] = accentBrush;
+            dict["SystemFillColorAttentionBackgroundBrush"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(bgSelected);
+
+            // ── ToggleSwitch (ON 상태) ──
+            var accentHoverBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentHover);
+            var accentDimBrush2 = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentDim);
+            var whiteBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.White);
+            dict["ToggleSwitchFillOn"] = accentBrush;
+            dict["ToggleSwitchFillOnPointerOver"] = accentHoverBrush;
+            dict["ToggleSwitchFillOnPressed"] = accentDimBrush2;
+            dict["ToggleSwitchStrokeOn"] = accentBrush;
+            dict["ToggleSwitchStrokeOnPointerOver"] = accentHoverBrush;
+            dict["ToggleSwitchStrokeOnPressed"] = accentDimBrush2;
+            dict["ToggleSwitchKnobFillOn"] = whiteBrush;
+            dict["ToggleSwitchKnobFillOnPointerOver"] = whiteBrush;
+            dict["ToggleSwitchKnobFillOnPressed"] = whiteBrush;
+
+            // ── RadioButton (선택 원형) ──
+            dict["RadioButtonOuterEllipseCheckedStroke"] = accentBrush;
+            dict["RadioButtonOuterEllipseCheckedStrokePointerOver"] = accentHoverBrush;
+            dict["RadioButtonOuterEllipseCheckedStrokePressed"] = accentDimBrush2;
+            dict["RadioButtonOuterEllipseCheckedFill"] = accentBrush;
+            dict["RadioButtonOuterEllipseCheckedFillPointerOver"] = accentHoverBrush;
+            dict["RadioButtonOuterEllipseCheckedFillPressed"] = accentDimBrush2;
+
+            // ── CheckBox ──
+            dict["CheckBoxCheckBackgroundFillChecked"] = accentBrush;
+            dict["CheckBoxCheckBackgroundFillCheckedPointerOver"] = accentHoverBrush;
+            dict["CheckBoxCheckBackgroundFillCheckedPressed"] = accentDimBrush2;
+            dict["CheckBoxCheckBackgroundStrokeChecked"] = accentBrush;
+            dict["CheckBoxCheckBackgroundStrokeCheckedPointerOver"] = accentHoverBrush;
+            dict["CheckBoxCheckBackgroundStrokeCheckedPressed"] = accentDimBrush2;
+
+            // ── AccentButton ──
+            dict["AccentButtonBackground"] = accentBrush;
+            dict["AccentButtonBackgroundPointerOver"] = accentHoverBrush;
+            dict["AccentButtonBackgroundPressed"] = accentDimBrush2;
+            dict["AccentButtonBackgroundDisabled"] = accentDimBrush2;
+            dict["AccentButtonBorderBrush"] = accentBrush;
+            dict["AccentButtonBorderBrushPointerOver"] = accentHoverBrush;
+            dict["AccentButtonBorderBrushPressed"] = accentDimBrush2;
+
+            // ── Slider ──
+            dict["SliderTrackValueFill"] = accentBrush;
+            dict["SliderTrackValueFillPointerOver"] = accentHoverBrush;
+            dict["SliderTrackValueFillPressed"] = accentDimBrush2;
+            dict["SliderThumbBackground"] = accentBrush;
+            dict["SliderThumbBackgroundPointerOver"] = accentHoverBrush;
+            dict["SliderThumbBackgroundPressed"] = accentDimBrush2;
+
+            // ── ProgressBar ──
+            dict["ProgressBarForeground"] = accentBrush;
+            dict["ProgressBarForegroundPointerOver"] = accentHoverBrush;
+
+            // ── HyperlinkButton / 탭 아이콘 ──
+            dict["HyperlinkButtonForeground"] = accentText;
+            dict["HyperlinkButtonForegroundPointerOver"] = new Microsoft.UI.Xaml.Media.SolidColorBrush(accentLight3);
+            dict["HyperlinkButtonForegroundPressed"] = accentBrush;
+
+            // ★ 새 dict를 기존 자리에 교체 → WinUI 3이 변경 감지해 {ThemeResource} 전체 재평가
+            root.Resources.ThemeDictionaries[dictKey] = dict;
+
+            // Application.Resources.ThemeDictionaries에도 미러링 — 일부 컨트롤이
+            // 상위 리소스 체인을 통해 Application 레벨에서 직접 조회하는 경우 대비.
+            // XamlControlsResources의 SystemAccentColor 등은 App 레벨 Default dict에 있음.
+            try
+            {
+                var appResources = Application.Current.Resources;
+                var appDict = new ResourceDictionary();
+                if (appResources.ThemeDictionaries.TryGetValue(dictKey, out var appExistingObj)
+                    && appExistingObj is ResourceDictionary appExisting)
+                {
+                    foreach (var kv in appExisting) appDict[kv.Key] = kv.Value;
+                }
+                // 우리가 덮어쓰려던 override 키만 appDict에 복사
+                foreach (var kv in dict)
+                    appDict[kv.Key] = kv.Value;
+                appResources.ThemeDictionaries[dictKey] = appDict;
+                Helpers.DebugLogger.Log($"[ApplyAccentOverride] mirrored override to Application.Resources ThemeDictionaries[{dictKey}]");
+            }
+            catch (Exception ex)
+            {
+                Helpers.DebugLogger.Log($"[ApplyAccentOverride] App-level mirror failed: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// HSL 명도 조정. amount는 -1.0 ~ +1.0. 색상/포화도 유지.
+        /// </summary>
+        private static Windows.UI.Color AdjustLightness(Windows.UI.Color c, double amount)
+        {
+            double r = c.R / 255.0, g = c.G / 255.0, b = c.B / 255.0;
+            double max = Math.Max(r, Math.Max(g, b));
+            double min = Math.Min(r, Math.Min(g, b));
+            double h = 0, s, l = (max + min) / 2.0;
+            if (max == min) { s = 0; }
+            else
+            {
+                double d = max - min;
+                s = l > 0.5 ? d / (2.0 - max - min) : d / (max + min);
+                if (max == r) h = (g - b) / d + (g < b ? 6 : 0);
+                else if (max == g) h = (b - r) / d + 2;
+                else h = (r - g) / d + 4;
+                h /= 6;
+            }
+            l = Math.Max(0, Math.Min(1, l + amount));
+
+            double HueToRgb(double p, double q, double t)
+            {
+                if (t < 0) t += 1; if (t > 1) t -= 1;
+                if (t < 1.0 / 6) return p + (q - p) * 6 * t;
+                if (t < 0.5) return q;
+                if (t < 2.0 / 3) return p + (q - p) * (2.0 / 3 - t) * 6;
+                return p;
+            }
+            double r2, g2, b2;
+            if (s == 0) { r2 = g2 = b2 = l; }
+            else
+            {
+                double q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                double p = 2 * l - q;
+                r2 = HueToRgb(p, q, h + 1.0 / 3);
+                g2 = HueToRgb(p, q, h);
+                b2 = HueToRgb(p, q, h - 1.0 / 3);
+            }
+            return Windows.UI.Color.FromArgb(c.A,
+                (byte)Math.Round(r2 * 255),
+                (byte)Math.Round(g2 * 255),
+                (byte)Math.Round(b2 * 255));
+        }
+
+        /// <summary>
+        /// HSL 명도 -10%로 호버 색상 파생. 포화도/색상은 유지.
+        /// </summary>
+        internal static Windows.UI.Color DeriveAccentHover(Windows.UI.Color c)
+        {
+            double r = c.R / 255.0, g = c.G / 255.0, b = c.B / 255.0;
+            double max = Math.Max(r, Math.Max(g, b));
+            double min = Math.Min(r, Math.Min(g, b));
+            double h = 0, s, l = (max + min) / 2.0;
+            if (max == min) { s = 0; }
+            else
+            {
+                double d = max - min;
+                s = l > 0.5 ? d / (2.0 - max - min) : d / (max + min);
+                if (max == r) h = (g - b) / d + (g < b ? 6 : 0);
+                else if (max == g) h = (b - r) / d + 2;
+                else h = (r - g) / d + 4;
+                h /= 6;
+            }
+            // 명도: 어두우면 +10%, 밝으면 -10% (호버는 "변화"가 핵심)
+            l = l < 0.5 ? Math.Min(1.0, l + 0.10) : Math.Max(0.0, l - 0.10);
+
+            double HueToRgb(double p, double q, double t)
+            {
+                if (t < 0) t += 1; if (t > 1) t -= 1;
+                if (t < 1.0 / 6) return p + (q - p) * 6 * t;
+                if (t < 0.5) return q;
+                if (t < 2.0 / 3) return p + (q - p) * (2.0 / 3 - t) * 6;
+                return p;
+            }
+            double r2, g2, b2;
+            if (s == 0) { r2 = g2 = b2 = l; }
+            else
+            {
+                double q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                double p = 2 * l - q;
+                r2 = HueToRgb(p, q, h + 1.0 / 3);
+                g2 = HueToRgb(p, q, h);
+                b2 = HueToRgb(p, q, h - 1.0 / 3);
+            }
+            return Windows.UI.Color.FromArgb(0xFF,
+                (byte)Math.Round(r2 * 255),
+                (byte)Math.Round(g2 * 255),
+                (byte)Math.Round(b2 * 255));
+        }
+
+        /// <summary>
+        /// "#RRGGBB" 또는 "#AARRGGBB" Hex 문자열을 Color로 파싱. 실패 시 false.
+        /// </summary>
+        internal static bool TryParseAccentHex(string hex, out Windows.UI.Color color)
+        {
+            color = default;
+            if (string.IsNullOrEmpty(hex)) return false;
+            var s = hex.StartsWith("#") ? hex[1..] : hex;
+            if (s.Length == 6)
+            {
+                if (byte.TryParse(s[0..2], System.Globalization.NumberStyles.HexNumber, null, out var r) &&
+                    byte.TryParse(s[2..4], System.Globalization.NumberStyles.HexNumber, null, out var g) &&
+                    byte.TryParse(s[4..6], System.Globalization.NumberStyles.HexNumber, null, out var b))
+                {
+                    color = Windows.UI.Color.FromArgb(0xFF, r, g, b);
+                    return true;
+                }
+            }
+            else if (s.Length == 8)
+            {
+                if (byte.TryParse(s[0..2], System.Globalization.NumberStyles.HexNumber, null, out var a) &&
+                    byte.TryParse(s[2..4], System.Globalization.NumberStyles.HexNumber, null, out var r) &&
+                    byte.TryParse(s[4..6], System.Globalization.NumberStyles.HexNumber, null, out var g) &&
+                    byte.TryParse(s[6..8], System.Globalization.NumberStyles.HexNumber, null, out var b))
+                {
+                    color = Windows.UI.Color.FromArgb(a, r, g, b);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        internal static (
+            Windows.UI.Color bgMica, Windows.UI.Color bgLayer1, Windows.UI.Color bgLayer2, Windows.UI.Color bgLayer3,
+            Windows.UI.Color accent, Windows.UI.Color accentHover,
+            Windows.UI.Color textPri, Windows.UI.Color textSec, Windows.UI.Color textTer,
+            Windows.UI.Color bgSel, Windows.UI.Color border,
+            Windows.UI.Color listSel, Windows.UI.Color listSelHover, Windows.UI.Color listSelPressed
+        ) GetThemePalette(string theme) => theme switch
+        {
+            "dracula" => (
+                Clr("#282a36"), Clr("#1e2029"), Clr("#282a36"), Clr("#44475a"),  // Background layers
+                Clr("#bd93f9"), Clr("#caa8ff"),                                   // Purple accent
+                Clr("#f8f8f2"), Clr("#6272a4"), Clr("#44475a"),                   // Foreground text
+                Clr("#4Dbd93f9"), Clr("#33f8f8f2"),                               // Selection/border
+                Clr("#99bd93f9"), Clr("#B3bd93f9"), Clr("#80bd93f9")              // List selection
+            ),
+            "tokyonight" => (
+                Clr("#16161e"), Clr("#1a1b26"), Clr("#292e42"), Clr("#414868"),   // Tokyo Night bg layers
+                Clr("#7aa2f7"), Clr("#7dcfff"),                                   // Blue + Cyan accent
+                Clr("#c0caf5"), Clr("#a9b1d6"), Clr("#565f89"),                   // fg layers
+                Clr("#4D7aa2f7"), Clr("#333b4261"),                               // Selection/border
+                Clr("#997aa2f7"), Clr("#B37aa2f7"), Clr("#807aa2f7")              // List selection
+            ),
+            "catppuccin" => (
+                Clr("#11111b"), Clr("#1e1e2e"), Clr("#181825"), Clr("#313244"),   // Crust→Base→Mantle→Surface0
+                Clr("#cba6f7"), Clr("#b4befe"),                                   // Mauve + Lavender
+                Clr("#cdd6f4"), Clr("#bac2de"), Clr("#7f849c"),                   // Text→Subtext1→Overlay1
+                Clr("#4Dcba6f7"), Clr("#33585b70"),                               // Selection/border
+                Clr("#99cba6f7"), Clr("#B3cba6f7"), Clr("#80cba6f7")              // List selection
+            ),
+            "gruvbox" => (
+                Clr("#1d2021"), Clr("#282828"), Clr("#3c3836"), Clr("#504945"),   // bg0_h→bg0→bg1→bg2
+                Clr("#fe8019"), Clr("#fabd2f"),                                   // Orange + Yellow accent
+                Clr("#ebdbb2"), Clr("#d5c4a1"), Clr("#a89984"),                   // fg→fg2→fg4
+                Clr("#4Dfe8019"), Clr("#33ebdbb2"),                               // Selection/border
+                Clr("#99fe8019"), Clr("#B3fe8019"), Clr("#80fe8019")              // List selection
+            ),
+            "nord" => (
+                Clr("#2e3440"), Clr("#3b4252"), Clr("#434c5e"), Clr("#4c566a"),
+                Clr("#88c0d0"), Clr("#81a1c1"),
+                Clr("#d8dee9"), Clr("#e5e9f0"), Clr("#4c566a"),
+                Clr("#4D88c0d0"), Clr("#334c566a"),
+                Clr("#9988c0d0"), Clr("#B388c0d0"), Clr("#8088c0d0")
+            ),
+            "onedark" => (
+                Clr("#21252b"), Clr("#282c34"), Clr("#2c313a"), Clr("#3e4451"),
+                Clr("#61afef"), Clr("#c678dd"),
+                Clr("#abb2bf"), Clr("#5c6370"), Clr("#4b5263"),
+                Clr("#4D61afef"), Clr("#333e4451"),
+                Clr("#9961afef"), Clr("#B361afef"), Clr("#8061afef")
+            ),
+            "monokai" => (
+                Clr("#1e1f1c"), Clr("#272822"), Clr("#2d2e2a"), Clr("#49483e"),
+                Clr("#f92672"), Clr("#a6e22e"),
+                Clr("#f8f8f2"), Clr("#a59f85"), Clr("#75715e"),
+                Clr("#4Df92672"), Clr("#33f8f8f2"),
+                Clr("#99f92672"), Clr("#B3f92672"), Clr("#80f92672")
+            ),
+            "solarized-light" => (
+                Clr("#fdf6e3"), Clr("#eee8d5"), Clr("#fdf6e3"), Clr("#d3cbb7"),
+                Clr("#268bd2"), Clr("#2aa198"),
+                Clr("#586e75"), Clr("#657b83"), Clr("#93a1a1"),
+                Clr("#4D268bd2"), Clr("#33586e75"),
+                Clr("#99268bd2"), Clr("#B3268bd2"), Clr("#80268bd2")
+            ),
+            _ => default
+        };
+
+        private static (
+            Windows.UI.Color fg, Windows.UI.Color hoverFg, Windows.UI.Color hoverBg,
+            Windows.UI.Color pressedFg, Windows.UI.Color pressedBg, Windows.UI.Color inactiveFg
+        ) GetCaptionColors(string theme) => theme switch
+        {
+            "dracula" => (
+                Clr("#f8f8f2"), Clr("#bd93f9"), Clr("#33bd93f9"),
+                Clr("#caa8ff"), Clr("#4Dbd93f9"), Clr("#6272a4")
+            ),
+            "tokyonight" => (
+                Clr("#a9b1d6"), Clr("#c0caf5"), Clr("#26394b70"),
+                Clr("#c0caf5"), Clr("#40394b70"), Clr("#737aa2")
+            ),
+            "catppuccin" => (
+                Clr("#a6adc8"), Clr("#cdd6f4"), Clr("#40585b70"),
+                Clr("#bac2de"), Clr("#5945475a"), Clr("#6c7086")
+            ),
+            "gruvbox" => (
+                Clr("#a89984"), Clr("#ebdbb2"), Clr("#1Febdbb2"),
+                Clr("#fe8019"), Clr("#33fe8019"), Clr("#665c54")
+            ),
+            "nord" => (
+                Clr("#d8dee9"), Clr("#88c0d0"), Clr("#2688c0d0"),
+                Clr("#81a1c1"), Clr("#4088c0d0"), Clr("#4c566a")
+            ),
+            "onedark" => (
+                Clr("#abb2bf"), Clr("#61afef"), Clr("#2661afef"),
+                Clr("#c678dd"), Clr("#4061afef"), Clr("#5c6370")
+            ),
+            "monokai" => (
+                Clr("#f8f8f2"), Clr("#f92672"), Clr("#26f92672"),
+                Clr("#a6e22e"), Clr("#40f92672"), Clr("#75715e")
+            ),
+            "solarized-light" => (
+                Clr("#586e75"), Clr("#268bd2"), Clr("#26268bd2"),
+                Clr("#2aa198"), Clr("#40268bd2"), Clr("#93a1a1")
+            ),
+            _ => (
+                Clr("#FFFFFF"), Clr("#FFFFFF"), Clr("#0FFFFFFF"),
+                Clr("#FFFFFF"), Clr("#14FFFFFF"), Clr("#787878")
+            )
+        };
+
+        internal static Windows.UI.Color Clr(string hex)
+        {
+            hex = hex.TrimStart('#');
+            byte a = 255, r, g, b;
+            if (hex.Length == 8)
+            {
+                a = Convert.ToByte(hex[..2], 16);
+                r = Convert.ToByte(hex[2..4], 16);
+                g = Convert.ToByte(hex[4..6], 16);
+                b = Convert.ToByte(hex[6..8], 16);
+            }
+            else
+            {
+                r = Convert.ToByte(hex[..2], 16);
+                g = Convert.ToByte(hex[2..4], 16);
+                b = Convert.ToByte(hex[4..6], 16);
+            }
+            return Windows.UI.Color.FromArgb(a, r, g, b);
+        }
+
+        // #endregion Theme Application
+
+        // =================================================================
+        //  #region Setting Changed Handlers
+        // =================================================================
+
+        private void OnSettingChanged(string key, object? value)
+        {
+            if (_isClosed) return;
+
+            switch (key)
+            {
+                case "Theme":
+                    Helpers.DispatcherHelper.SafeEnqueue(DispatcherQueue, () => ApplyTheme(value as string ?? "system"));
+                    break;
+
+                case "FontFamily":
+                    Helpers.DispatcherHelper.SafeEnqueue(DispatcherQueue, () => ApplyFontFamily(value as string ?? "Segoe UI Variable"));
+                    break;
+
+                case "Density":
+                    Helpers.DispatcherHelper.SafeEnqueue(DispatcherQueue, () => ApplyDensity(value as string ?? "comfortable"));
+                    break;
+
+                case "IconFontScale":
+                    Helpers.DispatcherHelper.SafeEnqueue(DispatcherQueue, () => ApplyIconFontScale(value as string ?? "0"));
+                    break;
+
+                case "ShowHiddenFiles":
+                case "ShowFileExtensions":
+                    // Invalidate cached setting before refreshing
+                    ViewModels.FileSystemViewModel.InvalidateDisplayNameCache();
+                    // Refresh all columns in active explorer + notify DisplayName change
+                    Helpers.DispatcherHelper.SafeEnqueue(DispatcherQueue, () =>
+                    {
+                        RefreshCurrentView();
+                        // 확장자/숨김 토글: 모든 활성 컬럼의 Children에 DisplayName 재평가 통지
+                        NotifyDisplayNameChangedAllColumns();
+                    });
+                    break;
+
+                case "Language":
+                    Helpers.DispatcherHelper.SafeEnqueue(DispatcherQueue, () =>
+                    {
+                        var lang = value as string ?? "system";
+                        _loc.Language = lang;
+                    });
+                    break;
+
+                case "MillerClickBehavior":
+                    Helpers.DispatcherHelper.SafeEnqueue(DispatcherQueue, () =>
+                    {
+                        bool isDouble = (value as string) == "double";
+                        bool leftIsMiller = ViewModel.LeftViewMode == Models.ViewMode.MillerColumns;
+                        bool rightIsMiller = ViewModel.RightViewMode == Models.ViewMode.MillerColumns;
+                        ViewModel.Explorer.EnableAutoNavigation = leftIsMiller && !isDouble;
+                        ViewModel.RightExplorer.EnableAutoNavigation = rightIsMiller && !isDouble;
+                    });
+                    break;
+
+                case "ShowCheckboxes":
+                    Helpers.DispatcherHelper.SafeEnqueue(DispatcherQueue, () => ApplyMillerCheckboxMode(value is bool cb && cb));
+                    break;
+
+                case "ShowThumbnails":
+                    Helpers.DispatcherHelper.SafeEnqueue(DispatcherQueue, () => ToggleThumbnails(value is bool st && st));
+                    break;
+
+                case "ShowFavoritesTree":
+                    Helpers.DispatcherHelper.SafeEnqueue(DispatcherQueue, () => ApplyFavoritesTreeMode(value is bool v && v));
+                    break;
+
+                case "ShowGitIntegration":
+                    // Git 통합 ON/OFF 시 모든 로드된 컬럼 새로고침 (git 감지 재실행)
+                    Helpers.DispatcherHelper.SafeEnqueue(DispatcherQueue, () => RefreshAllColumnsForGit());
+                    break;
+
+            }
+        }
+
+        private const string CjkFallback = ", Malgun Gothic, Microsoft YaHei UI, Microsoft JhengHei UI, Yu Gothic UI";
+
+        // 번들 폰트 매핑: 설정 이름 → ms-appx 경로#패밀리명
+        private static readonly Dictionary<string, string> BundledFonts = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Pretendard"] = "/Assets/Fonts/PretendardVariable.ttf#Pretendard Variable"
+        };
+
+        /// <summary>
+        /// 폰트 설정 이름에서 FontFamily 생성에 필요한 스펙 문자열을 반환한다.
+        /// 번들 폰트는 ms-appx 경로, 시스템 폰트는 이름 + CJK fallback.
+        /// QuickLookWindow 등 외부에서도 동일한 폰트 해석에 사용.
+        /// </summary>
+        internal static string ResolveFontSpec(string fontFamily)
+        {
+            return BundledFonts.TryGetValue(fontFamily, out var bundledPath)
+                ? bundledPath
+                : fontFamily + CjkFallback;
+        }
+
+        /// <summary>
+        /// 폰트 패밀리를 모든 뷰에 적용한다.
+        /// 번들 폰트는 앱 내 경로로 참조, 그 외는 시스템 폰트명 사용.
+        /// 사용자가 어떤 폰트를 선택하든 CJK fallback이 자동 추가됨.
+        /// 번들 폰트 경로와 시스템 폰트명은 혼합 불가 — 번들 폰트는 단독 사용.
+        /// </summary>
+        private void ApplyFontFamily(string fontFamily)
+        {
+            if (_isClosed) return;
+
+            if (this.Content is FrameworkElement root && root.Resources != null)
+            {
+                var fontSpec = ResolveFontSpec(fontFamily);
+                var font = new FontFamily(fontSpec);
+
+                // (1) 테마 리소스 업데이트 — 이후 생성/재활용되는 컨트롤에 적용
+                root.Resources["ContentControlThemeFontFamily"] = font;
+
+                // (2) 비주얼 트리 순회 — TextBlock/Control에 직접 FontFamily 적용
+                ApplyFontToVisualTree(root, font);
+
+                // (3) 프리뷰 패널 전파 — named TextBlock에 직접 설정
+                LeftPreviewPanel?.ApplyFont(font);
+                RightPreviewPanel?.ApplyFont(font);
+
+                // (4) QuickLook 윈도우 전파 (별도 Window)
+                _quickLookWindow?.SyncFont();
+            }
+        }
+
+        /// <summary>
+        /// 비주얼 트리를 재귀 순회하며 TextBlock과 Control에 FontFamily를 적용한다.
+        /// 모노폰트(Cascadia/Consolas), 아이콘 폰트(remixicon/Segoe Fluent Icons)는 건너뛴다.
+        /// </summary>
+        private static void ApplyFontToVisualTree(DependencyObject parent, FontFamily font)
+        {
+            var count = VisualTreeHelper.GetChildrenCount(parent);
+            for (var i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+
+                if (child is TextBlock tb && !IsExcludedFont(tb.FontFamily))
+                {
+                    tb.FontFamily = font;
+                }
+                else if (child is Microsoft.UI.Xaml.Controls.Control ctrl && !IsExcludedFont(ctrl.FontFamily))
+                {
+                    ctrl.FontFamily = font;
+                }
+
+                ApplyFontToVisualTree(child, font);
+            }
+        }
+
+        /// <summary>
+        /// 모노폰트, 아이콘 폰트 등 사용자 폰트로 대체하면 안 되는 폰트인지 확인.
+        /// </summary>
+        private static bool IsExcludedFont(FontFamily? ff)
+        {
+            var src = ff?.Source;
+            if (string.IsNullOrEmpty(src)) return false;
+            return src.Contains("Consolas", StringComparison.OrdinalIgnoreCase)
+                || src.Contains("Cascadia", StringComparison.OrdinalIgnoreCase)
+                || src.Contains("remixicon", StringComparison.OrdinalIgnoreCase)
+                || src.Contains("Segoe Fluent", StringComparison.OrdinalIgnoreCase)
+                || src.Contains("Segoe MDL2", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// 밀도 설정(Compact/Standard/Comfortable)을 모든 뷰에 적용한다.
+        /// </summary>
+        private void ApplyDensity(string density)
+        {
+            // 숫자 문자열(0~6) 또는 레거시 이름 지원
+            int level = density switch
+            {
+                "compact" => 0,
+                "comfortable" => 2,
+                "spacious" => 4,
+                _ => int.TryParse(density, out var n) ? Math.Clamp(n, 0, 5) : 2
+            };
+
+            _densityPadding = new Thickness(12, level, 12, level);
+            _densityMinHeight = 20.0 + level;
+
+            var densityStr = level.ToString();
+
+            // Apply to all visible Miller Column ListViews
+            foreach (var kvp in _tabMillerPanels)
+                ApplyDensityToItemsControl(kvp.Value.items);
+            ApplyDensityToItemsControl(MillerColumnsControlRight);
+
+            // Apply to Details/List/Icon views via their public methods
+            foreach (var kvp in _tabDetailsPanels)
+                kvp.Value.ApplyDensity(densityStr);
+            foreach (var kvp in _tabListPanels)
+                kvp.Value.ApplyDensity(densityStr);
+            foreach (var kvp in _tabIconPanels)
+                kvp.Value.ApplyDensity(densityStr);
+        }
+
+        private void ApplyDensityToItemsControl(ItemsControl? millerControl)
+        {
+            if (millerControl?.ItemsPanelRoot == null) return;
+            foreach (var columnContainer in millerControl.ItemsPanelRoot.Children)
+            {
+                var listView = VisualTreeHelpers.FindChild<ListView>(columnContainer);
+                if (listView?.ItemsPanelRoot == null) continue;
+                for (int i = 0; i < listView.Items.Count; i++)
+                {
+                    if (listView.ContainerFromIndex(i) is ListViewItem item)
+                    {
+                        var cp = VisualTreeHelpers.FindChild<ContentPresenter>(item);
+                        if (cp != null)
+                        {
+                            var grid = VisualTreeHelpers.FindChild<Grid>(cp);
+                            if (grid != null)
+                            {
+                                grid.Padding = _densityPadding;
+                                grid.MinHeight = _densityMinHeight;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // =================================================================
+        //  #region Icon & Font Scale
+        // =================================================================
+
+        /// <summary>
+        /// 직전 스케일 레벨. ConditionalWeakTable baseline이 GC로 유실되었을 때
+        /// 현재 FontSize에서 역산(currentSize - previousLevel)으로 baseline을 복원하기 위해 사용.
+        /// </summary>
+        internal static int PreviousScaleLevel { get; set; } = 0;
+
+        /// <summary>
+        /// 각 UI 요소의 원래(XAML 기본) FontSize를 저장하는 약한 참조 테이블.
+        /// 절대값 기반 스케일링의 핵심: baseline + level = target FontSize.
+        /// 요소가 GC되면 자동 정리됨 → PreviousScaleLevel로 역산 복원.
+        /// (Global UI — toolbar/tab bar/status bar — 만 사용. ListView items, Sidebar, Miller,
+        ///  AddressBar 는 FontScaleService + XAML {Binding} 로 대체됨.)
+        /// </summary>
+        internal static readonly ConditionalWeakTable<DependencyObject, double[]> BaselineFontSizes = new();
+
+        /// <summary>
+        /// 아이콘/폰트 스케일(0~5)을 FontScaleService 에 전파한다.
+        /// 대부분의 UI(ListView items / Sidebar / Miller / AddressBar)는 XAML {Binding} 으로 자동 반영.
+        /// Global UI(toolbar/tab bar/status bar), HomeView, SettingsView 만 여기서 tree walker 로 처리.
+        /// </summary>
+        private void ApplyIconFontScale(string scale)
+        {
+            if (_isClosed) return;
+
+            var svc = Helpers.FontScaleService.Instance;
+            PreviousScaleLevel = svc.Level;
+            int newLevel = int.TryParse(scale, out var n) ? Math.Clamp(n, 0, 5) : 0;
+            svc.Level = newLevel; // → PropertyChanged → XAML bindings 자동 갱신
+
+            // Sidebar 컬럼 폭 (GridLength 는 직접 바인딩 어려우므로 여기서 설정)
+            double sidebarWidth = 200 + newLevel * 6;
+            if (!_sidebarHiddenForSpecialMode)
+                SidebarCol.Width = new GridLength(sidebarWidth);
+            else
+                _savedSidebarWidth = sidebarWidth; // Settings 모드 해제 시 복원될 값 갱신
+
+            // Global UI (toolbar, tab bar, status bar) — 여전히 tree walker
+            ApplyIconFontScaleToGlobalUI(newLevel);
+
+            // Settings page — Collapsed 상태에선 VisualTree 순회 불가하므로 Visible일 때만 적용
+            if (SettingsView.Visibility == Visibility.Visible)
+                SettingsView.ApplyIconFontScale(newLevel);
+
+            // Home page — 동일하게 Visible일 때만 적용
+            if (HomeView.Visibility == Visibility.Visible)
+                HomeView.ApplyIconFontScale(newLevel);
+
+            // Sidebar width: reset custom width on scale change
+            try
+            {
+                var appSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                appSettings.Values.Remove("CustomSidebarWidth");
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// 탭 바(Row 0), 툴바(Row 1), 상태바(Row 3)의 TextBlock/FontIcon/TextBox에
+        /// 절대값 기반 폰트 스케일을 적용한다. baseline + level = 최종 FontSize.
+        /// </summary>
+        private void ApplyIconFontScaleToGlobalUI(int level)
+        {
+            if (_isClosed) return;
+
+            // ── Tab bar (Row 0) ──
+            // ConditionalWeakTable 의존 제거: WinUI 3에서 managed wrapper GC로 baseline 유실됨.
+            // 탭 아이템은 고정 baseline 기반 직접 스케일만 사용.
+            if (AppTitleBar != null)
+            {
+                // 탭 아이템: TryGetElement로 실제 realized 요소만 순회
+                int tabItemCount = ViewModel?.Tabs?.Count ?? 0;
+                for (int ti = 0; ti < tabItemCount; ti++)
+                {
+                    if (TabRepeater.TryGetElement(ti) is UIElement tabUi)
+                        ApplyScaleToTabElement(tabUi, level);
+                }
+                // NewTab 버튼 안의 FontIcon (baseline=12)
+                var newTabIcon = Helpers.VisualTreeHelpers.FindChild<FontIcon>(NewTabButton);
+                if (newTabIcon != null) newTabIcon.FontSize = 12.0 + level;
+            }
+
+            // "SPAN Finder" 타이틀 TextBlock (baseline=12)
+            if (AppTitleText != null)
+                AppTitleText.FontSize = Math.Max(7, 12.0 + level);
+
+            // ── Toolbar (Row 1) & StatusBar (Row 3) ──
+            // 이 영역은 고정 요소이므로 ConditionalWeakTable이 비교적 안정적이나
+            // 안전을 위해 유지. 탭과 달리 재활용되지 않음.
+            if (this.Content is Grid rootGrid)
+            {
+                foreach (var child in rootGrid.Children)
+                {
+                    if (child is FrameworkElement fe)
+                    {
+                        int row = Grid.GetRow(fe);
+                        if (row == 1 || row == 3)
+                            ApplyAbsoluteScaleToTree(fe, level, 8, 20, 10, 16);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 절대값 기반 폰트 스케일: 각 요소의 원래 FontSize(baseline)를 ConditionalWeakTable에 저장하고,
+        /// baseline + level로 최종 FontSize를 설정한다.
+        /// range 필터는 baseline 기준이므로 스케일 레벨 변경 후에도 정확하게 동작.
+        /// </summary>
+        /// <param name="parent">순회 시작점</param>
+        /// <param name="level">스케일 레벨 (0~5)</param>
+        /// <param name="tbMin">TextBlock/FontIcon baseline 최소값</param>
+        /// <param name="tbMax">TextBlock/FontIcon baseline 최대값</param>
+        /// <param name="tboxMin">TextBox baseline 최소값 (-1이면 TextBox 무시)</param>
+        /// <param name="tboxMax">TextBox baseline 최대값</param>
+        internal static void ApplyAbsoluteScaleToTree(
+            DependencyObject parent, int level,
+            double tbMin, double tbMax,
+            double tboxMin = -1, double tboxMax = -1)
+        {
+            int count = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+
+                // AddressBarControl은 자체 ScaleLevel 속성으로 스케일을 관리하므로 skip.
+                // Global 순회가 내부까지 진입하면 이중 적용(double traversal) 버그 발생.
+                if (child is Controls.AddressBarControl)
+                    continue;
+
+                if (child is TextBlock tb)
+                {
+                    if (!BaselineFontSizes.TryGetValue(tb, out var stored))
+                    {
+                        // GC로 유실된 baseline 역산: 현재값 - 이전 레벨 = 원래 baseline
+                        stored = new[] { tb.FontSize - PreviousScaleLevel };
+                        BaselineFontSizes.Add(tb, stored);
+                    }
+                    if (stored[0] >= tbMin && stored[0] <= tbMax)
+                        tb.FontSize = Math.Max(7, stored[0] + level);
+                }
+                else if (child is FontIcon fi)
+                {
+                    if (!BaselineFontSizes.TryGetValue(fi, out var stored))
+                    {
+                        stored = new[] { fi.FontSize - PreviousScaleLevel };
+                        BaselineFontSizes.Add(fi, stored);
+                    }
+                    if (stored[0] >= tbMin && stored[0] <= tbMax)
+                        fi.FontSize = Math.Max(7, stored[0] + level);
+                }
+                else if (tboxMin >= 0 && child is TextBox tbox)
+                {
+                    if (!BaselineFontSizes.TryGetValue(tbox, out var stored))
+                    {
+                        stored = new[] { tbox.FontSize - PreviousScaleLevel };
+                        BaselineFontSizes.Add(tbox, stored);
+                    }
+                    if (stored[0] >= tboxMin && stored[0] <= tboxMax)
+                        tbox.FontSize = Math.Max(9, stored[0] + level);
+                    // TextBox 내부로 재귀하지 않음: 내부 PlaceholderText TextBlock이
+                    // 이미 스케일된 FontSize를 상속받아 baseline 오염 발생 방지.
+                    // TextBox.FontSize 설정만으로 내부 요소에 자동 전파됨.
+                    continue;
+                }
+                else if (child is ComboBox combo)
+                {
+                    // ComboBox도 TextBox와 동일하게 FontSize 속성만 설정하고 내부 재귀 금지.
+                    // 내부 ContentPresenter TextBlock에 local value를 직접 설정하면
+                    // ComboBox.FontSize 상속이 무시되어 스케일 복귀가 불가능해짐.
+                    if (!BaselineFontSizes.TryGetValue(combo, out var stored))
+                    {
+                        stored = new[] { combo.FontSize - PreviousScaleLevel };
+                        BaselineFontSizes.Add(combo, stored);
+                    }
+                    if (stored[0] >= tbMin && stored[0] <= tbMax)
+                        combo.FontSize = Math.Max(9, stored[0] + level);
+                    continue;
+                }
+
+                ApplyAbsoluteScaleToTree(child, level, tbMin, tbMax, tboxMin, tboxMax);
+            }
+        }
+
+        // #endregion Icon & Font Scale
+
+        private void ApplyMillerCheckboxMode(bool showCheckboxes)
+        {
+            _millerSelectionMode = showCheckboxes
+                ? ListViewSelectionMode.Multiple
+                : ListViewSelectionMode.Extended;
+
+            // Apply to all visible Miller Column ListViews in both panes
+            // 모든 탭의 Miller 패널에도 적용
+            foreach (var kvp in _tabMillerPanels)
+                ApplyCheckboxToItemsControl(kvp.Value.items, _millerSelectionMode);
+            ApplyCheckboxToItemsControl(MillerColumnsControlRight, _millerSelectionMode);
+        }
+
+        private void ToggleThumbnails(bool showThumbnails)
+        {
+            var explorer = ViewModel.ActiveExplorer;
+            if (explorer?.CurrentFolder == null) return;
+
+            foreach (var child in explorer.CurrentFolder.Children)
+            {
+                if (child is FileViewModel fileVm)
+                {
+                    if (showThumbnails && fileVm.IsThumbnailSupported)
+                        _ = fileVm.LoadThumbnailAsync();
+                    else
+                        fileVm.UnloadThumbnail();
+                }
+            }
+        }
+
+        private void ApplyCheckboxToItemsControl(ItemsControl? control, ListViewSelectionMode mode)
+        {
+            if (control?.ItemsPanelRoot == null) return;
+            for (int i = 0; i < control.Items.Count; i++)
+            {
+                var listView = GetListViewFromItemsControl(control, i);
+                if (listView != null)
+                {
+                    listView.SelectionMode = mode;
+                }
+            }
+        }
+
+        private ListView? GetListViewFromItemsControl(ItemsControl control, int index)
+        {
+            var container = control.ContainerFromIndex(index) as ContentPresenter;
+            if (container == null) return null;
+            return VisualTreeHelpers.FindChild<ListView>(container);
+        }
+
+        // #endregion Setting Changed Handlers
+
+        // =================================================================
+        //  #region Terminal, Settings Tab, Refresh
+        // =================================================================
+
+        /// <summary>
+        /// 터미널 열기 처리. 현재 활성 경로에서 설정된 터미널 애플리케이션을 실행한다.
+        /// </summary>
+        private void HandleOpenTerminal()
+        {
+            var explorer = ViewModel.ActiveExplorer;
+            var path = explorer?.CurrentPath;
+            if (string.IsNullOrEmpty(path) || path == "PC")
+            {
+                ViewModel.ShowToast(_loc.Get("Error_TerminalInvalidPath") ?? "Open terminal from a valid folder");
+                return;
+            }
+            if (!System.IO.Directory.Exists(path))
+            {
+                ViewModel.ShowToast(_loc.Get("Error_PathNotExist") ?? "Path does not exist");
+                return;
+            }
+            var shellService = App.Current.Services.GetRequiredService<Services.ShellService>();
+            shellService.OpenTerminal(path, _settings.DefaultTerminal);
+        }
+
+        /// <summary>
+        /// Settings 탭을 닫고 이전 탭으로 복귀.
+        /// 유일한 탭이면 Home 탭을 먼저 생성.
+        /// </summary>
+        private void CloseCurrentSettingsTab()
+        {
+            var tab = ViewModel.ActiveTab;
+            if (tab == null || tab.ViewMode != ViewMode.Settings) return;
+
+            int index = ViewModel.ActiveTabIndex;
+
+            if (ViewModel.Tabs.Count <= 1)
+            {
+                // 유일한 탭이면 Home 탭 먼저 생성
+                ViewModel.AddNewTab(); // Home 탭 추가 + 자동 SwitchToTab
+                var newTab = ViewModel.ActiveTab;
+                if (newTab != null)
+                {
+                    CreateMillerPanelForTab(newTab);
+                    SwitchMillerPanel(newTab.Id);
+                }
+                // Settings 탭은 이제 인덱스 0
+                ViewModel.CloseTab(0);
+            }
+            else
+            {
+                ViewModel.CloseTab(index);
+                if (ViewModel.ActiveTab != null)
+                    SwitchMillerPanel(ViewModel.ActiveTab.Id);
+            }
+
+            ResubscribeLeftExplorer();
+            UpdateViewModeVisibility();
+            FocusActiveView();
+        }
+
+        /// <summary>
+        /// ActionLog 탭을 닫고 이전 탭으로 복귀.
+        /// 유일한 탭이면 Home 탭을 먼저 생성.
+        /// </summary>
+        private void CloseCurrentActionLogTab()
+        {
+            var tab = ViewModel.ActiveTab;
+            if (tab == null || tab.ViewMode != ViewMode.ActionLog) return;
+
+            int index = ViewModel.ActiveTabIndex;
+
+            if (ViewModel.Tabs.Count <= 1)
+            {
+                ViewModel.AddNewTab();
+                var newTab = ViewModel.ActiveTab;
+                if (newTab != null)
+                {
+                    CreateMillerPanelForTab(newTab);
+                    SwitchMillerPanel(newTab.Id);
+                }
+                ViewModel.CloseTab(0);
+            }
+            else
+            {
+                ViewModel.CloseTab(index);
+                if (ViewModel.ActiveTab != null)
+                    SwitchMillerPanel(ViewModel.ActiveTab.Id);
+            }
+
+            ResubscribeLeftExplorer();
+            UpdateViewModeVisibility();
+            FocusActiveView();
+        }
+
+        /// <summary>
+        /// Settings 탭을 열거나 기존 탭으로 전환 (UI 연동 포함).
+        /// </summary>
+        private void OpenSettingsTab()
+        {
+            ViewModel.OpenOrSwitchToSettingsTab();
+            ResubscribeLeftExplorer();
+            UpdateViewModeVisibility();
+            // Tab count changed — update passthrough region
+            Helpers.DispatcherHelper.SafeEnqueue(DispatcherQueue, Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, UpdateTitleBarRegions);
+        }
+
+        /// <summary>
+        /// Git 통합 설정 변경 시 양쪽 패인의 모든 컬럼을 새로고침.
+        /// 일반 RefreshCurrentView()는 마지막 컬럼만 새로고침하므로 부족.
+        /// </summary>
+        private void RefreshAllColumnsForGit()
+        {
+            Helpers.DebugLogger.Log("[Git.Setting] ShowGitIntegration changed, refreshing all columns");
+            // 양쪽 Explorer의 모든 컬럼을 리로드
+            foreach (var explorer in new[] { ViewModel.Explorer, ViewModel.RightExplorer })
+            {
+                foreach (var col in explorer.Columns.ToArray())
+                {
+                    col.ResetLoadState();
+                    _ = col.EnsureChildrenLoadedAsync();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 현재 활성 뷰를 새로고침한다.
+        /// </summary>
+        /// <summary>
+        /// 모든 탭의 모든 컬럼 Children에 DisplayName PropertyChanged를 통지.
+        /// 확장자 토글 시 이미 로드된 항목의 표시 이름을 즉시 갱신.
+        /// </summary>
+        private void NotifyDisplayNameChangedAllColumns()
+        {
+            foreach (var tab in ViewModel.Tabs)
+            {
+                if (tab.Explorer?.Columns == null) continue;
+                foreach (var column in tab.Explorer.Columns)
+                    foreach (var child in column.Children)
+                        child.NotifyDisplayNameChanged();
+            }
+            // 분할 뷰 RightExplorer는 탭 목록에 포함되지 않으므로 별도 처리
+            if (ViewModel.RightExplorer?.Columns != null)
+            {
+                foreach (var column in ViewModel.RightExplorer.Columns)
+                    foreach (var child in column.Children)
+                        child.NotifyDisplayNameChanged();
+            }
+        }
+
+        private void RefreshCurrentView()
+        {
+            // Refresh only the leaf (last) column in the active pane.
+            // Refreshing ALL columns causes cascading destruction: Children.Clear()
+            // sets SelectedChild=null which removes subsequent columns.
+            var explorer = ViewModel.ActiveExplorer;
+            if (explorer.Columns.Count > 0)
+            {
+                var lastCol = explorer.Columns[explorer.Columns.Count - 1];
+                _ = lastCol.RefreshAsync();
+            }
+        }
+
+        // #endregion Terminal, Settings Tab, Refresh
+
+        // =================================================================
+        //  #region Help Overlay, Settings/Log Button Handlers
+        // =================================================================
+
+        private bool _isHelpOpen = false;
+
+        /// <summary>
+        /// 단축키 도움말 오버레이를 토글한다.
+        /// </summary>
+        private void ToggleHelpOverlay()
+        {
+            _isHelpOpen = !_isHelpOpen;
+            HelpOverlay.Visibility = _isHelpOpen ? Visibility.Visible : Visibility.Collapsed;
+
+            // Help를 열 때마다 최신 키 바인딩으로 갱신
+            if (_isHelpOpen)
+            {
+                HelpFlyoutContentControl.UpdateKeyTexts();
+            }
+        }
+
+        private void OnHelpClick(object sender, RoutedEventArgs e)
+        {
+            ToggleHelpOverlay();
+        }
+
+        private void HelpOverlay_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            if (_isHelpOpen)
+            {
+                _isHelpOpen = false;
+                HelpOverlay.Visibility = Visibility.Collapsed;
+                e.Handled = true;
+            }
+        }
+
+        /// <summary>
+        /// 설정 버튼 클릭 이벤트. 설정 탭을 열다.
+        /// </summary>
+        private void OnSettingsClick(object sender, RoutedEventArgs e)
+        {
+            OpenSettingsTab();
+        }
+
+        private void OnLogClick(object sender, RoutedEventArgs e)
+        {
+            OpenLogTab();
+        }
+
+        /// <summary>
+        /// 작업 로그 탭을 열거나 기존 탭으로 전환 (UI 연동 포함).
+        /// </summary>
+        private void OpenLogTab()
+        {
+            ViewModel.OpenOrSwitchToActionLogTab();
+            ResubscribeLeftExplorer();
+            UpdateViewModeVisibility();
+            Helpers.DispatcherHelper.SafeEnqueue(DispatcherQueue, Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, UpdateTitleBarRegions);
+        }
+
+        private void OnRecycleBinTapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+        {
+            ViewModel.SwitchViewMode(ViewMode.RecycleBin);
+            UpdateViewModeVisibility();
+            Helpers.DebugLogger.Log("[Sidebar] RecycleBin tapped");
+        }
+
+        // #endregion Help Overlay, Settings/Log Button Handlers
+    }
+}

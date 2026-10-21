@@ -1,0 +1,223 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RootNamespace>Span</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Platforms>x86;x64;ARM64</Platforms>
+    <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
+    <UseWinUI>true</UseWinUI>
+    <WinUISDKReferences>false</WinUISDKReferences>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+    <!-- Sentry release 정확도 — Package.appxmanifest와 동기화 필요 (수동) -->
+    <Version>2.0.8</Version>
+    <AssemblyVersion>2.0.8.0</AssemblyVersion>
+    <FileVersion>2.0.8.0</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\SplashScreen.scale-200.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\LockScreenLogo.scale-200.png" />
+    <Content Include="Assets\Square150x150Logo.scale-200.png" />
+    <Content Include="Assets\Square44x44Logo.scale-200.png" />
+    <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
+    <Content Include="Assets\Square44x44Logo.targetsize-32_altform-unplated.png" />
+    <Content Include="Assets\Square44x44Logo.targetsize-48_altform-unplated.png" />
+    <Content Include="Assets\Square44x44Logo.targetsize-256_altform-unplated.png" />
+    <Content Include="Assets\app.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\StoreLogo.png" />
+    <Content Include="Assets\icon_coffee.png" />
+    <Content Include="Assets\icon_hamburger.png" />
+    <Content Include="Assets\icon_steak.png" />
+    <Content Include="Assets\lumibear_sleeping.png" />
+    <Content Include="Assets\Wide310x150Logo.scale-200.png" />
+    <Content Include="Assets\Fonts\remixicon.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Fonts\Phosphor.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Fonts\tabler-icons.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Fonts\PretendardVariable.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="icons.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="icons-phosphor.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="icons-tabler.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <!-- Onboarding assets — WebView2가 virtual host로 로드 -->
+  <ItemGroup>
+    <Content Include="Assets\Onboarding\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <!-- 라이선스 원문을 패키지에 동봉한다. 인앱 링크는 외부 GitHub로 나가므로
+       오프라인 사용자와 스토어 심사자는 달리 확인할 방법이 없다.
+       UnRAR 라이선스는 "license, or in documentation" 포함을 요구하기도 한다.
+       사본이 아니라 링크로 참조해 원본과 어긋나지 않게 한다. -->
+  <ItemGroup>
+    <Content Include="$(MSBuildThisFileDirectory)..\..\..\LICENSE.md">
+      <Link>Licenses\LICENSE.md</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>false</Visible>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)..\..\..\OpenSourceLicenses.md">
+      <Link>Licenses\OpenSourceLicenses.md</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>false</Visible>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)..\..\..\third_party\otterzip\UNRAR-LICENSE.txt">
+      <Link>Licenses\UNRAR-LICENSE.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>false</Visible>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Manifest Include="$(ApplicationManifest)" />
+  </ItemGroup>
+
+  <!-- OtterZip 네이티브 아카이브 엔진 (Issue #66 — .7z/.tar.*/.cab 등 비-ZIP 포맷).
+       x64 전용이다. Rust 코어가 x86/ARM64 타깃을 지원하지 않으므로
+       (OtterZip docs/01-plan/performance.md §7.2) 비-x64 빌드에서는 이 DLL을 싣지 않고
+       System.IO.Compression 경로로 폴백한다. 로드 실패는 정상 경로로 처리해야 한다.
+
+       반입 절차와 출처는 third_party\otterzip\VERSION.txt 참고.
+       DLL을 교체할 때는 반드시 third_party\otterzip\verify-otterzip-dll.ps1을 통과시킬 것 —
+       crt-static 없이 빌드된 DLL은 개발 머신에서는 멀쩡히 동작하지만 클린 윈도우에서
+       로드에 실패한다(OtterZip이 2026-07-21 이 문제로 스토어 인증에 실패했다). -->
+  <ItemGroup Condition="'$(Platform)' == 'x64'">
+    <Content Include="$(MSBuildThisFileDirectory)..\..\..\third_party\otterzip\x64\otterzip_ffi.dll">
+      <Link>otterzip_ffi.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>false</Visible>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(DisableMsixProjectCapabilityAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+    <ProjectCapability Include="Msix" />
+  </ItemGroup>
+  <!-- Phase 1: 썸네일 격리 워커 — 빌드 의존성 + MSIX 패키지 포함 -->
+  <ItemGroup>
+    <ProjectReference Include="..\Span.Thumbs\Span.Thumbs.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <PrivateAssets>all</PrivateAssets>
+      <Private>false</Private>
+      <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
+    </ProjectReference>
+  </ItemGroup>
+
+  <!-- v1.4.5: 이슈 #23 최종 수정 — Span.Thumbs self-contained 전체를 MSIX 패키지 포함.
+       이전 (v1.4.3/4): Span.Thumbs.* 4개 파일만 복사 → framework-dependent라 .NET 런타임 없어 spawn 즉사 →
+                      파이널라이저 큐 적체 → D3D 크래시.
+       수정 (v1.4.5): Span.Thumbs를 self-contained(런타임 포함)로 빌드하고, 전체 폴더(227개)를
+                    'Span.Thumbs/' 서브디렉토리로 패키징. ThumbnailClientService가 baseDir/Span.Thumbs/ 경로
+                    자동 탐색(line 70-71)하므로 코드 변경 없이 서브폴더 배치 가능.
+                    메인 앱 DLL과 네임 충돌 없음 (격리된 서브디렉토리).
+
+       경로: net8.0-windows10.0.19041.0/win-$(platform)/ (self-contained는 RID 서브폴더에 생성됨).
+       .pdb는 패키지 크기 절감 차원에서 제외. -->
+  <Target Name="IncludeThumbsInPackage"
+          BeforeTargets="AssignTargetPaths;GetCopyToOutputDirectoryItems"
+          DependsOnTargets="ResolveProjectReferences">
+    <PropertyGroup>
+      <_ThumbsRid Condition="'$(Platform)' == 'x64'">win-x64</_ThumbsRid>
+      <_ThumbsRid Condition="'$(Platform)' == 'x86'">win-x86</_ThumbsRid>
+      <_ThumbsRid Condition="'$(Platform)' == 'ARM64'">win-arm64</_ThumbsRid>
+      <_ThumbsBinDir>$(MSBuildThisFileDirectory)..\Span.Thumbs\bin\$(Platform)\$(Configuration)\net8.0-windows10.0.19041.0\$(_ThumbsRid)\</_ThumbsBinDir>
+    </PropertyGroup>
+    <ItemGroup Condition="Exists('$(_ThumbsBinDir)Span.Thumbs.exe')">
+      <!-- Span.Thumbs self-contained 전체를 'Span.Thumbs/' 서브디렉토리로 포함 (pdb 제외) -->
+      <_ThumbsAllFiles Include="$(_ThumbsBinDir)**\*.*" Exclude="$(_ThumbsBinDir)**\*.pdb" />
+      <Content Include="@(_ThumbsAllFiles)"
+               Link="Span.Thumbs\%(RecursiveDir)%(Filename)%(Extension)"
+               CopyToOutputDirectory="Always"
+               Visible="false" />
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="ColorCode.WinUI" Version="2.0.15" />
+    <PackageReference Include="CommunityToolkit.WinUI.Controls.Sizers" Version="8.2.251219" />
+    <PackageReference Include="FluentFTP" Version="53.0.2" />
+    <PackageReference Include="H.NotifyIcon.WinUI" Version="2.2.0" />
+<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260209005" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
+    <PackageReference Include="SSH.NET" Version="2025.1.0" />
+    <PackageReference Include="Sentry" Version="6.1.0" />
+    <!-- ZIP 압축 해제 시 CRC32 검증용. 직접 구현한 table-driven CRC는 445 MB/s로
+         추출 처리량을 반토막 내지만 이 패키지는 18 GB/s(실측)라 영향이 없다. -->
+    <PackageReference Include="System.IO.Hashing" Version="8.0.0" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.3" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+    <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
+  </PropertyGroup>
+  <!-- WON: 서명 키는 저장소에 포함하지 않는다. 패키징 시 아래 속성을 명령행/환경변수로 전달:
+       msbuild ... -p:WonSignPfx=C:\path\WON.pfx -p:WonSignPassword=*** -->
+  <PropertyGroup Condition="'$(WonSignPfx)' != ''">
+    <AppxPackageSigningEnabled>true</AppxPackageSigningEnabled>
+    <PackageCertificateKeyFile>$(WonSignPfx)</PackageCertificateKeyFile>
+    <PackageCertificatePassword>$(WonSignPassword)</PackageCertificatePassword>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(WonSignPfx)' == ''">
+    <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
+    <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
+    <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
+    <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">False</PublishTrimmed>
+  </PropertyGroup>
+
+  <!-- Auto-generate BuildInfo.g.cs with build date -->
+  <Target Name="_GenerateBuildInfo" BeforeTargets="BeforeCompile;CoreCompile;_GenerateCompileInputs" AfterTargets="_CheckForNETCoreSdkIsPreview">
+    <PropertyGroup>
+      <_BuildDate>$([System.DateTime]::UtcNow.ToString("yyyyMMdd"))</_BuildDate>
+      <_BuildInfoPath>$(ProjectDir)BuildInfo.g.cs</_BuildInfoPath>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_BuildInfoPath)" Lines="namespace Span%3B;internal static class BuildInfo;{;    public const string BuildDate = &quot;$(_BuildDate)&quot;%3B;}" Overwrite="true" />
+    <ItemGroup>
+      <Compile Include="$(_BuildInfoPath)" Condition="!@(Compile-&gt;AnyHaveMetadataValue('Identity','$(_BuildInfoPath)'))" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Fix VS MSBuild flattening XBF paths in embed directory.
+       VS build strips directory prefixes from embed.resfiles, causing
+       "Cannot locate resource from 'ms-appx:///Controls/...'" at runtime.
+       This target copies XBFs with correct relative paths and rewrites embed.resfiles. -->
+  <Target Name="_FixEmbedXbfPaths" BeforeTargets="_GenerateProjectPriFileCore;_GenerateProjectPriConfigFileCore" AfterTargets="CompileXaml;Prep_MakeEmbedFiles;_CreateEmbedFiles" Condition="Exists('$(IntermediateOutputPath)embed\embed.resfiles')">
+    <ItemGroup>
+      <_XbfWithPath Include="$(IntermediateOutputPath)Controls\*.xbf" />
+      <_XbfWithPath Include="$(IntermediateOutputPath)Views\**\*.xbf" />
+      <_XbfWithPath Include="$(IntermediateOutputPath)Assets\**\*.xbf" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_XbfWithPath)" DestinationFiles="@(_XbfWithPath->'$(IntermediateOutputPath)embed\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" Condition="'@(_XbfWithPath)' != ''" />
+    <!-- Rebuild embed.resfiles with correct relative paths -->
+    <ItemGroup>
+      <_EmbedXbf Remove="@(_EmbedXbf)" />
+      <_EmbedXbf Include="$(IntermediateOutputPath)embed\**\*.xbf" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(IntermediateOutputPath)embed\embed.resfiles" Lines="@(_EmbedXbf->'%(RecursiveDir)%(Filename)%(Extension)')" Overwrite="true" />
+  </Target>
+</Project>
