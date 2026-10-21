@@ -19,7 +19,7 @@ public class ActionLogService : IActionLogService
     {
         var appDataDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "SPAN Finder");
+            "WON");
         Directory.CreateDirectory(appDataDir);
         _logFilePath = Path.Combine(appDataDir, "action_log.json");
     }

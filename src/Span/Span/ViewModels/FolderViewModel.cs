@@ -696,8 +696,8 @@ namespace Span.ViewModels
         /// Lists installed WSL distributions as folders (Issue #67).
         ///
         /// Reported symptom: typing <c>\\wsl.localhost</c> launched Windows File Explorer even
-        /// with SPAN set as the default file manager. Rather than only stopping the hand-off,
-        /// SPAN now lists the distributions itself, the same way a server root lists its shares.
+        /// with WON set as the default file manager. Rather than only stopping the hand-off,
+        /// WON now lists the distributions itself, the same way a server root lists its shares.
         /// </summary>
         private async Task LoadWslDistributionsAsync(System.Threading.CancellationToken token)
         {

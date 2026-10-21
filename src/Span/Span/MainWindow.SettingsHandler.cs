@@ -1133,7 +1133,7 @@ namespace Span
                 if (newTabIcon != null) newTabIcon.FontSize = 12.0 + level;
             }
 
-            // "SPAN Finder" 타이틀 TextBlock (baseline=12)
+            // "WON" 타이틀 TextBlock (baseline=12)
             if (AppTitleText != null)
                 AppTitleText.FontSize = Math.Max(7, 12.0 + level);
 

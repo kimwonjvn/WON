@@ -644,7 +644,7 @@ namespace Span
         // ── 콜드 스타트 중 도착한 활성화 보관 ──
         // 첫 창이 세션 복원을 마치기 전에 온 리다이렉트는 여기 쌓았다가 그 뒤에 처리한다.
         // 이전에는 창이 없으면 버렸고(폴더가 열리지 않음), 창은 있지만 Loaded 전이면 세션 복원보다 먼저
-        // 새 탭을 만들었다. SPAN이 꺼져 있을 때 폴더 두 개를 연달아 열면 두 번째가 사라지던 경로다.
+        // 새 탭을 만들었다. WON이 꺼져 있을 때 폴더 두 개를 연달아 열면 두 번째가 사라지던 경로다.
         private readonly object _activationLock = new();
         private readonly System.Collections.Generic.List<Helpers.LaunchRequest> _pendingActivations = new();
         private bool _activationReady;

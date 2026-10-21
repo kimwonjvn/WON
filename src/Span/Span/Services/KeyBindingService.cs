@@ -226,6 +226,7 @@ public class KeyBindingService
             ["span.navigate.forward"]    = ["Alt+Right"],
             ["span.navigate.up"]         = ["Alt+Up"],
             ["span.navigate.addressBar"] = ["Ctrl+L", "Alt+D", "F4"],
+            ["span.settings.addressBar"] = ["Ctrl+Shift+L"],
             ["span.navigate.search"]     = ["Ctrl+F", "F3"],
             ["span.navigate.filterBar"]  = ["Ctrl+Shift+F"],
 

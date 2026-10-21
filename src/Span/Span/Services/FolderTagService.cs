@@ -11,16 +11,16 @@ namespace Span.Services;
 /// Issue #58: 폴더 컬러 태그를 각 폴더의 desktop.ini에 저장/조회한다.
 ///
 /// 저장 위치를 desktop.ini로 택한 이유: 파일이 폴더 안에 있으므로 폴더를 이동하거나
-/// 이름을 바꿔도 — 심지어 SPAN 밖(탐색기, 스크립트)에서 옮겨도 — 태그가 따라간다.
+/// 이름을 바꿔도 — 심지어 WON 밖(탐색기, 스크립트)에서 옮겨도 — 태그가 따라간다.
 /// 앱 DB(경로 키) 방식의 고아 문제도, NTFS 대체 스트림 방식의 USB/네트워크 소실 문제도
 /// 발생하지 않는다.
 ///
 /// 중요한 설계 결정 — 폴더 속성을 절대 건드리지 않는다:
 /// Windows가 desktop.ini를 해석하려면 폴더에 System/ReadOnly 속성이 필요하지만,
-///  - System 속성을 붙이면 숨김 표시가 꺼진 상태에서 그 폴더가 SPAN 목록에서 사라지고
+///  - System 속성을 붙이면 숨김 표시가 꺼진 상태에서 그 폴더가 WON 목록에서 사라지고
 ///    (FolderViewModel의 Hidden|System 필터),
 ///  - ReadOnly 속성을 붙이면 Directory.Delete(recursive)가 실패해 폴더 이동/삭제가 깨진다.
-/// 태그 점은 SPAN이 이 파일을 직접 읽어 그리므로 셸의 해석이 필요 없다.
+/// 태그 점은 WON이 이 파일을 직접 읽어 그리므로 셸의 해석이 필요 없다.
 /// 대신 탐색기에서는 태그가 보이지 않는다 (의도된 트레이드오프).
 /// </summary>
 public sealed class FolderTagService

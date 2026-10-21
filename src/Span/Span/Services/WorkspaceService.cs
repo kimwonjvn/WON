@@ -37,7 +37,7 @@ namespace Span.Services
         {
             var folder = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "SPAN Finder");
+                "WON");
             Directory.CreateDirectory(folder);
             _filePath = Path.Combine(folder, WorkspacesFileName);
             _tempPath = Path.Combine(folder, WorkspacesTempFileName);

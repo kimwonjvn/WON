@@ -115,6 +115,8 @@ namespace Span.Models
         public const string SettingsSidebarCloud = "span.settings.sidebar.cloud";
         public const string SettingsSidebarNetwork = "span.settings.sidebar.network";
         public const string SettingsSidebarServers = "span.settings.sidebar.servers";
+        public const string SettingsSidebarLocalServers = "span.settings.sidebar.localservers";
+        public const string SettingsAddressBar = "span.settings.addressBar";
         public const string SettingsSidebarRecycleBin = "span.settings.sidebar.recycleBin";
 
         // ── Settings: Select (선택형) ───────────────────────────
@@ -247,6 +249,8 @@ namespace Span.Models
             { SettingsSidebarCloud, "Sidebar" },
             { SettingsSidebarNetwork, "Sidebar" },
             { SettingsSidebarServers, "Sidebar" },
+            { SettingsSidebarLocalServers, "Sidebar" },
+            { SettingsAddressBar, "View" },
             { SettingsSidebarRecycleBin, "Sidebar" },
             // Theme
             { SettingsThemeSystem, "Theme" },
@@ -378,6 +382,8 @@ namespace Span.Models
             { SettingsSidebarCloud, "Settings_SidebarShowCloud" },
             { SettingsSidebarNetwork, "Settings_SidebarShowNetwork" },
             { SettingsSidebarServers, "Settings_SidebarShowServers" },
+            { SettingsSidebarLocalServers, "Settings_SidebarShowLocalServers" },
+            { SettingsAddressBar, "Settings_ShowAddressBar" },
             { SettingsSidebarRecycleBin, "Settings_SidebarShowRecycleBin" },
             // Theme
             { SettingsThemeSystem, "Cmd_ThemeSystem" },

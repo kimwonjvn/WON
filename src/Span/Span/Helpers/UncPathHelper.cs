@@ -60,7 +60,7 @@ internal static class UncPathHelper
     }
 
     /// <summary>
-    /// True for any UNC root SPAN lists itself — a file server (shares) or
+    /// True for any UNC root WON lists itself — a file server (shares) or
     /// <c>\\wsl.localhost</c> (distributions).
     ///
     /// These are listings, not directories: nothing can be created, pasted or dropped into

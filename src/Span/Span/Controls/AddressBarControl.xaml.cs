@@ -115,6 +115,9 @@ namespace Span.Controls
         /// </summary>
         public event EventHandler<string>? PathNavigated;
 
+        /// <summary>편집 모드가 끝나 breadcrumb 모드로 돌아왔을 때 발생.</summary>
+        public event EventHandler? EditModeExited;
+
         /// <summary>
         /// Fired when user clicks a breadcrumb segment.
         /// </summary>
@@ -204,6 +207,13 @@ namespace Span.Controls
         }
 
         private void ShowBreadcrumbMode()
+        {
+            var wasEdit = _isEditMode;
+            ShowBreadcrumbModeCore();
+            if (wasEdit) EditModeExited?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void ShowBreadcrumbModeCore()
         {
             if (!_isEditMode) return;
             _isEditMode = false;

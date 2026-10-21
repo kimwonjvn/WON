@@ -23,7 +23,7 @@ internal readonly record struct LaunchRequest(LaunchKind Kind, string? Path)
 }
 
 /// <summary>
-/// SPAN 실행 인자 해석. 경로마다 모양이 다르다:
+/// WON 실행 인자 해석. 경로마다 모양이 다르다:
 ///   앱 실행 별칭·기본 파일 관리자 레지스트리  "…\WindowsApps\spanfinder.exe" "D:\folder"   (argv0 포함)
 ///   점프 목록 최근 폴더                       D:\My Folder                                (argv0·따옴표 없음)
 ///   점프 목록 '새 창'                         --new-window
@@ -96,13 +96,13 @@ internal static class LaunchArguments
         && (arg.Contains("RecycleBinFolder", StringComparison.OrdinalIgnoreCase)
             || arg.Contains("{645FF040-5081-101B-9F08-00AA002F954E}", StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>This PC(내 PC) CLSID인지. SPAN 홈으로 매핑한다.</summary>
+    /// <summary>This PC(내 PC) CLSID인지. WON 홈으로 매핑한다.</summary>
     public static bool IsThisPC(string? arg) =>
         !string.IsNullOrEmpty(arg)
         && arg.Contains("{20D04FE0-3AEA-1069-A2D8-08002B30309D}", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// CLSID 가상 폴더 경로인지(This PC 제외). 제어판·네트워크·프린터 등 SPAN이 탐색할 수 없어
+    /// CLSID 가상 폴더 경로인지(This PC 제외). 제어판·네트워크·프린터 등 WON이 탐색할 수 없어
     /// explorer.exe에 위임하는 폴더.
     /// </summary>
     public static bool IsVirtualFolder(string? arg) =>

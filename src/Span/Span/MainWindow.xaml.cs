@@ -376,7 +376,7 @@ namespace Span
         private readonly List<string> _clipboardPaths = new();
         private bool _isCutOperation = false;
         /// <summary>
-        /// Issue #62: SPAN 자신이 클립보드에 쓴 직후 발생하는 ContentChanged를 무시하기 위한 플래그.
+        /// Issue #62: WON 자신이 클립보드에 쓴 직후 발생하는 ContentChanged를 무시하기 위한 플래그.
         /// (자기 이벤트로 방금 넣은 내부 상태를 지우면 안 됨)
         /// </summary>
         private bool _suppressNextClipboardChange;
@@ -577,7 +577,7 @@ namespace Span
             // 인스턴스 단위 구독은 backing field 직접 할당 케이스에서 새 인스턴스로 안 따라감 →
             // 정적 이벤트로 forward 받아 sender 비교로 라우팅 (인스턴스 무관 보장).
             // Issue #62: 다른 앱(탐색기 등)이 클립보드를 가져가면 내부 클립보드 상태를 무효화한다.
-            // 구독이 없어서, SPAN에서 한 번 복사하면 이후 탐색기 복사본이 영원히 무시됐다.
+            // 구독이 없어서, WON에서 한 번 복사하면 이후 탐색기 복사본이 영원히 무시됐다.
             try { Windows.ApplicationModel.DataTransfer.Clipboard.ContentChanged += OnSystemClipboardChanged; }
             catch (Exception ex) { Helpers.DebugLogger.Log($"[Clipboard] ContentChanged 구독 실패: {ex.Message}"); }
             ViewModels.ExplorerViewModel.AnyBeforeReplaceLastColumn += OnAnyBeforeReplaceLastColumn;
@@ -614,6 +614,9 @@ namespace Span
 
             // Focus management on ViewMode change
             ViewModel.PropertyChanged += OnViewModelPropertyChanged;
+            MainAddressBar.EditModeExited += OnAddressBarEditModeExited;
+            LeftAddressBar.EditModeExited += OnAddressBarEditModeExited;
+            RightAddressBar.EditModeExited += OnAddressBarEditModeExited;
             ViewModel.LastTabClosed += (_, __) => this.Close();
             ViewModel.NetworkShortcutFtpRequested += OnNetworkShortcutFtpRequested;
 
@@ -644,7 +647,7 @@ namespace Span
             _settings.AppLaunchCount++;
 
             // Window title (shown in taskbar thumbnail & Alt+Tab)
-            this.Title = "SPAN Finder";
+            this.Title = "WON";
 
             // Window icon (shown in taskbar & title bar)
             try
@@ -1963,7 +1966,7 @@ namespace Span
         /// <summary>
         /// Issue #62: 시스템 클립보드가 바뀌면(다른 앱이 복사/잘라내기) 내부 클립보드 상태를 비운다.
         /// 그래야 HandlePaste가 외부 분기로 진입하고, 붙여넣기 버튼/메뉴도 올바르게 활성화된다.
-        /// SPAN 자신이 쓴 직후의 이벤트는 _suppressNextClipboardChange로 건너뛴다.
+        /// WON 자신이 쓴 직후의 이벤트는 _suppressNextClipboardChange로 건너뛴다.
         /// </summary>
         private void OnSystemClipboardChanged(object? sender, object e)
         {
@@ -2598,6 +2601,11 @@ namespace Span
                 // Sidebar 스케일은 이제 FontScaleService + XAML {Binding} 으로 자동 반영됨.
                 // (기존 _iconFontScaleLevel 기반 fan-out 재적용 불필요 — Phase B/C 제거)
             }
+            else if (e.PropertyName == nameof(MainViewModel.IsAddressBarShown) ||
+                     e.PropertyName == nameof(MainViewModel.IsAddressBarPeek))
+            {
+                Helpers.DispatcherHelper.SafeEnqueue(DispatcherQueue, ApplyAddressBarVisibility);
+            }
             else if (e.PropertyName == nameof(MainViewModel.IsToastError))
             {
                 Helpers.DispatcherHelper.SafeEnqueue(DispatcherQueue, () =>
@@ -3202,6 +3210,7 @@ namespace Span
                     case "Cloud": ViewModel.IsCloudDrivesExpanded = !ViewModel.IsCloudDrivesExpanded; break;
                     case "Network": ViewModel.IsNetworkDrivesExpanded = !ViewModel.IsNetworkDrivesExpanded; break;
                     case "Servers": ViewModel.IsServerDrivesExpanded = !ViewModel.IsServerDrivesExpanded; break;
+                    case "LocalServers": ViewModel.IsLocalServersExpanded = !ViewModel.IsLocalServersExpanded; break;
                 }
             }
         }
@@ -3227,10 +3236,48 @@ namespace Span
                     case "Cloud": _settings.SidebarShowCloud = false; break;
                     case "Network": _settings.SidebarShowNetwork = false; break;
                     case "Servers": _settings.SidebarShowServers = false; break;
+                    case "LocalServers": _settings.SidebarShowLocalServers = false; break;
                 }
                 ApplySidebarSectionVisibility();
             };
 
+            var flyout = new MenuFlyout();
+            flyout.Items.Add(item);
+            flyout.ShowAt(grid, new Microsoft.UI.Xaml.Controls.Primitives.FlyoutShowOptions { Position = e.GetPosition(grid) });
+            e.Handled = true;
+        }
+
+        /// <summary>로컬 서버(\\\\host) 항목 탭: 해당 서버의 공유 목록으로 이동.</summary>
+        private void OnLocalServerTapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+        {
+            if (sender is not Grid grid || grid.DataContext is not DriveItem drive) return;
+            try
+            {
+                if (ViewModel.CurrentViewMode == ViewMode.Home || ViewModel.CurrentViewMode == ViewMode.ActionLog
+                    || ViewModel.CurrentViewMode == ViewMode.RecycleBin)
+                {
+                    ViewModel.SwitchViewMode(ViewModel.ResolveViewModeFromHome());
+                    UpdateViewModeVisibility();
+                }
+                _ = ViewModel.ActiveExplorer?.NavigateToPath(drive.Path);
+                if (ViewModel.CurrentViewMode == ViewMode.MillerColumns) FocusColumnAsync(0); else FocusActiveView();
+            }
+            catch (Exception ex)
+            {
+                Helpers.DebugLogger.Log($"[Sidebar] OnLocalServerTapped error: {ex.Message}");
+            }
+        }
+
+        /// <summary>로컬 서버 항목 우클릭: 목록에서 제거.</summary>
+        private void OnLocalServerRightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
+        {
+            if (sender is not Grid grid || grid.DataContext is not DriveItem drive) return;
+            var item = new MenuFlyoutItem
+            {
+                Text = _loc.Get("Sidebar_RemoveFromList") ?? "Remove from list",
+                Icon = new FontIcon { Glyph = "\uE74D" }
+            };
+            item.Click += (_, _) => ViewModel.RemoveLocalServer(drive.Name);
             var flyout = new MenuFlyout();
             flyout.Items.Add(item);
             flyout.ShowAt(grid, new Microsoft.UI.Xaml.Controls.Primitives.FlyoutShowOptions { Position = e.GetPosition(grid) });
@@ -4348,8 +4395,24 @@ namespace Span
         /// 즐겨찾기 사이드바의 표시 모드(Tree/Flat)를 설정에 따라 적용한다.
         /// </summary>
         /// <param name="showTree">true면 트리 모드, false면 플랫 리스트 모드를 표시한다.</param>
+        /// <summary>분할 보기 좌/우 주소창의 표시 여부를 적용한다 (단일 모드는 x:Bind로 처리).</summary>
+        private void ApplyAddressBarVisibility()
+        {
+            var vis = (ViewModel.IsAddressBarShown || ViewModel.IsAddressBarPeek)
+                ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+            LeftAddressBar.Visibility = vis;
+            RightAddressBar.Visibility = vis;
+        }
+
+        private void OnAddressBarEditModeExited(object? sender, EventArgs e)
+        {
+            if (!ViewModel.IsAddressBarPeek) return;
+            ViewModel.IsAddressBarPeek = false;
+        }
+
         internal void ApplySidebarSectionVisibility()
         {
+            ApplyAddressBarVisibility();
             var v = Microsoft.UI.Xaml.Visibility.Visible;
             var c = Microsoft.UI.Xaml.Visibility.Collapsed;
             SidebarHomeSection.Visibility = _settings.SidebarShowHome ? v : c;
@@ -4358,6 +4421,7 @@ namespace Span
             SidebarCloudSection.Visibility = _settings.SidebarShowCloud ? v : c;
             SidebarNetworkSection.Visibility = _settings.SidebarShowNetwork ? v : c;
             SidebarServersSection.Visibility = _settings.SidebarShowServers ? v : c;
+            SidebarLocalServersSection.Visibility = _settings.SidebarShowLocalServers ? v : c;
             SidebarRecycleBinSection.Visibility = _settings.SidebarShowRecycleBin ? v : c;
         }
 
@@ -6223,7 +6287,7 @@ namespace Span
 
             // Issue #71: Ctrl+X(HandleCut)와 같은 헬퍼로 쓴다. 예전에는 경로 텍스트 + 지연 StorageItems였고
             // Flush와 _suppressNextClipboardChange가 없었다 — 파일 대화상자에 T"T"가 붙여넣어지고,
-            // SPAN을 닫으면 파일 데이터가 사라졌으며, 자기 쓰기를 외부 변경으로 오인해
+            // WON을 닫으면 파일 데이터가 사라졌으며, 자기 쓰기를 외부 변경으로 오인해
             // 잘라내기 상태(_clipboardPaths·반투명 효과)가 바로 초기화됐다.
             _suppressNextClipboardChange = true;
             int clipboardGen = ++_clipboardOpGen;

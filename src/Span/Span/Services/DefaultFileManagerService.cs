@@ -166,7 +166,7 @@ namespace Span.Services
         }
 
         /// <summary>
-        /// 현재 SPAN이 기본 파일 관리자인지 확인.
+        /// 현재 WON이 기본 파일 관리자인지 확인.
         /// HKCU에서 Folder\shell\open\command를 읽어 spanfinder.exe 포함 여부 확인.
         /// </summary>
         public bool IsDefault()
@@ -235,7 +235,7 @@ Windows Registry Editor Version 5.00
         /// 복원용 .reg 내용 생성.
         /// v2.0.7까지는 \command만 지워 빈 shell\open 키가 남았고, 그 빈 키가 HKLM의 open 동사를 가려
         /// ShellExecute(폴더, "open")이 ERROR_NO_ASSOCIATION(1155)으로 실패했다(실측: 기본 동사(NULL)는 성공,
-        /// 명시적 "open"만 실패). 그래서 shell\open에 SPAN이 쓴 command 말고 아무것도 없으면 shell\open 키째
+        /// 명시적 "open"만 실패). 그래서 shell\open에 WON이 쓴 command 말고 아무것도 없으면 shell\open 키째
         /// 지운다. 다른 값이나 하위 키가 있으면(다른 앱·사용자가 둔 것) 예전처럼 command만 지워 그것들을 보존한다.
         /// shell 키는 다른 앱의 동사가 있을 수 있어 건드리지 않는다.
         /// </summary>

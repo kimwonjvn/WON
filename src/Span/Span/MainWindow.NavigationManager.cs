@@ -97,7 +97,7 @@ namespace Span
             };
 
         /// <summary>
-        /// 가상 폴더 — SPAN에서 직접 탐색 불가, explorer.exe에 위임.
+        /// 가상 폴더 — WON에서 직접 탐색 불가, explorer.exe에 위임.
         /// RecycleBinFolder는 자체 처리되므로 여기에 포함하지 않음.
         /// </summary>
         private static readonly HashSet<string> _shellVirtualFolders = new(StringComparer.OrdinalIgnoreCase)
@@ -833,6 +833,15 @@ namespace Span
         /// </summary>
         private void ShowAddressBarEditMode()
         {
+            // 주소창이 숨김 상태면 편집이 끝날 때까지만 일시 표시
+            if (!ViewModel.IsAddressBarShown && !ViewModel.IsAddressBarPeek)
+            {
+                ViewModel.IsAddressBarPeek = true;
+                ApplyAddressBarVisibility();
+                DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                    () => GetActiveAddressBar().EnterEditMode());
+                return;
+            }
             GetActiveAddressBar().EnterEditMode();
         }
 
@@ -869,6 +878,7 @@ namespace Span
         /// </summary>
         private async void OnAddressBarPathNavigated(object sender, string path)
         {
+            if (ViewModel.IsAddressBarPeek) ViewModel.IsAddressBarPeek = false;
             // shell:RecycleBinFolder 입력 시 휴지통 뷰 전환
             if (string.Equals(path, "shell:RecycleBinFolder", System.StringComparison.OrdinalIgnoreCase))
             {
@@ -994,6 +1004,9 @@ namespace Span
                 }
             }
 
+            // \\서버 형태로 접속하면 사이드바 "로컬 서버"에 자동 등록
+            ViewModel.RegisterLocalServerFromPath(path);
+
             var explorer = ResolveExplorerForAddressBar(sender);
 
             // Home/RecycleBin 모드에서 경로 입력 시 MillerColumns로 전환
@@ -1073,7 +1086,7 @@ namespace Span
                 {
                     // Issue #67: UNC 경로를 아래 ShellExecute로 넘기면 안 된다. 그 호출은
                     // "cmd" / "calc" 같은 실행 명령 호환용인데 \\wsl.localhost 같은 입력까지
-                    // 삼켜서, SPAN이 기본 파일 관리자인데도 윈도우 탐색기가 떴다(제보 #67).
+                    // 삼켜서, WON이 기본 파일 관리자인데도 윈도우 탐색기가 떴다(제보 #67).
                     //
                     // 셸 네임스페이스 루트(\\wsl.localhost)와 서버 루트는 위에서 이미 탐색으로
                     // 넘겼으므로 여기 오지 않는다. 남는 것은 도달할 수 없거나 존재하지 않는

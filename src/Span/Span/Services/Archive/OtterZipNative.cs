@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------------
 // otterzip_ffi.dll statically links the `unrar` / `unrar_sys` crates, which embed
-// UnRAR sources (C) Alexander Roshal. SPAN Finder uses UnRAR to EXTRACT RAR
+// UnRAR sources (C) Alexander Roshal. WON uses UnRAR to EXTRACT RAR
 // archives only and never creates them. The UnRAR license requires the following
 // paragraph to appear in the license, the documentation, and in source code
 // comments of the resulting package — this is that source comment. The same text

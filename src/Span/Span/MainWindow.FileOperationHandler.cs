@@ -459,7 +459,7 @@ namespace Span
         /// 밖의 쓰기에 밀렸을 때(<see cref="IsLatestClipboardOp"/>) 부른다. 시스템 클립보드에 이 창의
         /// 파일이 더는 없기 때문이다. ContentChanged 이벤트에만 맡기지 않는 이유: 진행 중인 파일 복사가
         /// 켜 둔 _suppressNextClipboardChange가 그 쓰기의 이벤트를 삼키면 상태가 남아, 클립보드는
-        /// 텍스트인데 SPAN 안 Ctrl+V가 잘라낸 파일을 이동시킨다.
+        /// 텍스트인데 WON 안 Ctrl+V가 잘라낸 파일을 이동시킨다.
         /// </summary>
         private void ResetInternalClipboardState()
         {

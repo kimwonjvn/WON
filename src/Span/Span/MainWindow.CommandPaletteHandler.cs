@@ -418,6 +418,8 @@ namespace Span
             AddSettingToggle(catalog, ShortcutCommands.SettingsSidebarDrives, "Settings_SidebarShowDrives", settings.SidebarShowLocalDrives, new[] { "sidebar drives", "사이드바 드라이브" }, "Sidebar");
             AddSettingToggle(catalog, ShortcutCommands.SettingsSidebarCloud, "Settings_SidebarShowCloud", settings.SidebarShowCloud, new[] { "sidebar cloud", "사이드바 클라우드" }, "Sidebar");
             AddSettingToggle(catalog, ShortcutCommands.SettingsSidebarNetwork, "Settings_SidebarShowNetwork", settings.SidebarShowNetwork, new[] { "sidebar network", "사이드바 네트워크" }, "Sidebar");
+            AddSettingToggle(catalog, ShortcutCommands.SettingsAddressBar, "Settings_ShowAddressBar", ViewModel.IsAddressBarShown, new[] { "path bar", "address bar", "breadcrumb", "경로 표시줄", "주소창" }, "View");
+            AddSettingToggle(catalog, ShortcutCommands.SettingsSidebarLocalServers, "Settings_SidebarShowLocalServers", settings.SidebarShowLocalServers, new[] { "sidebar local servers", "사이드바 로컬 서버" }, "Sidebar");
             AddSettingToggle(catalog, ShortcutCommands.SettingsSidebarServers, "Settings_SidebarShowServers", settings.SidebarShowServers, new[] { "sidebar servers", "사이드바 서버" }, "Sidebar");
             AddSettingToggle(catalog, ShortcutCommands.SettingsSidebarRecycleBin, "Settings_SidebarShowRecycleBin", settings.SidebarShowRecycleBin, new[] { "sidebar recycle", "사이드바 휴지통" }, "Sidebar");
 

@@ -1689,6 +1689,13 @@
                                     <Rectangle Height="1" Fill="{ThemeResource SpanBorderSubtleBrush}" Margin="48,0,0,0" />
                                     <Grid Margin="48,0,0,0">
                                         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <FontIcon Grid.Column="0" Glyph="&#xE968;" FontSize="14" Foreground="{ThemeResource SpanAccentBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="SidebarShowLocalServersLabel" Grid.Column="1" Text="Local Servers" Style="{StaticResource ToggleRowLabel}" />
+                                        <ToggleSwitch x:Name="SidebarShowLocalServersToggle" Grid.Column="2" IsOn="True" OnContent="" OffContent="" Toggled="OnSidebarSectionToggled"/>
+                                    </Grid>
+                                    <Rectangle Height="1" Fill="{ThemeResource SpanBorderSubtleBrush}" Margin="48,0,0,0" />
+                                    <Grid Margin="48,0,0,0">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                         <FontIcon Grid.Column="0" Glyph="&#xE74D;" FontSize="14" Foreground="{ThemeResource SpanAccentBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                         <TextBlock x:Name="SidebarShowRecycleBinLabel" Grid.Column="1" Text="Recycle Bin" Style="{StaticResource ToggleRowLabel}" />
                                         <ToggleSwitch x:Name="SidebarShowRecycleBinToggle" Grid.Column="2" IsOn="True" OnContent="" OffContent="" Toggled="OnSidebarSectionToggled"/>
@@ -2005,7 +2012,7 @@
                                         </Border>
                                         <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
                                             <TextBlock x:Name="DefaultFMLabel" Text="기본 파일 관리자" Style="{StaticResource SettingsCardLabel}" />
-                                            <TextBlock x:Name="DefaultFMDesc" Text="폴더/드라이브를 열 때 SPAN Finder 사용" Style="{StaticResource SettingsCardDesc}" />
+                                            <TextBlock x:Name="DefaultFMDesc" Text="폴더/드라이브를 열 때 WON 사용" Style="{StaticResource SettingsCardDesc}" />
                                         </StackPanel>
                                         <ToggleSwitch x:Name="DefaultFileManagerToggle" Grid.Column="2" VerticalAlignment="Center" IsOn="False" OnContent="" OffContent="" />
                                     </Grid>
@@ -2016,10 +2023,10 @@
                                                    Text="• 등록 시 UAC(관리자 권한) 승인이 필요합니다. 승인해야 정상 동작합니다."/>
                                         <TextBlock x:Name="DefaultFMInfo2" TextWrapping="Wrap" FontSize="11"
                                                    Foreground="{ThemeResource SpanTextTertiaryBrush}"
-                                                   Text="• 해제 시에도 UAC 승인이 필요합니다. SPAN Finder를 제거하기 전에 반드시 이 설정을 먼저 해제하세요."/>
+                                                   Text="• 해제 시에도 UAC 승인이 필요합니다. WON을 제거하기 전에 반드시 이 설정을 먼저 해제하세요."/>
                                         <TextBlock x:Name="DefaultFMInfo3" TextWrapping="Wrap" FontSize="11"
                                                    Foreground="{ThemeResource SpanTextTertiaryBrush}"
-                                                   Text="ℹ 이 설정을 해제하지 않고 앱을 삭제하면 폴더가 열리지 않을 수 있습니다. 그런 경우 SPAN Finder를 다시 설치해 이 설정을 해제하세요."/>
+                                                   Text="ℹ 이 설정을 해제하지 않고 앱을 삭제하면 폴더가 열리지 않을 수 있습니다. 그런 경우 WON을 다시 설치해 이 설정을 해제하세요."/>
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
@@ -2079,7 +2086,7 @@
                     <ScrollViewer x:Name="SupportSection" Visibility="Collapsed">
                         <StackPanel Padding="20" Spacing="0">
                             <TextBlock x:Name="SupportTitle" Text="개발자 후원" Style="{StaticResource SettingsSectionTitle}" />
-                            <TextBlock x:Name="SupportDesc" Text="SPAN Finder는 무료 오픈소스 프로젝트입니다. 개발을 응원해 주시면 큰 힘이 됩니다!"
+                            <TextBlock x:Name="SupportDesc" Text="WON은 무료 오픈소스 프로젝트입니다. 개발을 응원해 주시면 큰 힘이 됩니다!"
                                        FontSize="12" Foreground="{ThemeResource SpanTextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,12"/>
 
                             <!-- GitHub Sponsors -->
@@ -2189,7 +2196,7 @@
                                     <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
                                         <FontIcon Glyph="&#xE80F;" FontSize="40" Foreground="{ThemeResource SpanAccentBrush}" />
                                         <StackPanel Spacing="2">
-                                            <TextBlock Text="SPAN Finder" FontSize="22" FontWeight="Bold" Foreground="{ThemeResource SpanTextPrimaryBrush}" />
+                                            <TextBlock Text="WON" FontSize="22" FontWeight="Bold" Foreground="{ThemeResource SpanTextPrimaryBrush}" />
                                             <TextBlock x:Name="VersionLabel" FontSize="12" Foreground="{ThemeResource SpanTextSecondaryBrush}" />
                                         </StackPanel>
                                     </StackPanel>

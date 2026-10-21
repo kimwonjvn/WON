@@ -53,6 +53,7 @@ namespace Span.Services
         bool SidebarShowCloud { get; set; }
         bool SidebarShowNetwork { get; set; }
         bool SidebarShowServers { get; set; }
+        bool SidebarShowLocalServers { get; set; }
         bool SidebarShowRecycleBin { get; set; }
     }
 

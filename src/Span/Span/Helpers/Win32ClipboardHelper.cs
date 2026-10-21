@@ -14,7 +14,7 @@ namespace Span.Helpers;
 /// 원본 형식을 직접 읽는 폴백이 필요하다.
 ///
 /// 또한 잘라내기/복사 구분은 탐색기가 "Preferred DropEffect" 형식으로 전달하므로
-/// 이를 읽어야 탐색기에서 Ctrl+X 한 항목이 SPAN에서도 이동으로 처리된다.
+/// 이를 읽어야 탐색기에서 Ctrl+X 한 항목이 WON에서도 이동으로 처리된다.
 /// </summary>
 internal static class Win32ClipboardHelper
 {

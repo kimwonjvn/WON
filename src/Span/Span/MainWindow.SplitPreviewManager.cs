@@ -101,6 +101,13 @@ namespace Span
             => (!isSplitViewEnabled && mode != Models.ViewMode.Settings && mode != Models.ViewMode.ActionLog) ? Visibility.Visible : Visibility.Collapsed;
 
         /// <summary>
+        /// 단일 모드 주소창: 기본 조건 + 사용자가 숨기지 않았거나(또는 일시 호출 중) 일 때만 표시
+        /// </summary>
+        public Visibility IsMainAddressBarVisible(bool isSplitViewEnabled, Models.ViewMode mode, bool shown, bool peek)
+            => (IsSingleNonSettingsVisible(isSplitViewEnabled, mode) == Visibility.Visible && (shown || peek))
+                ? Visibility.Visible : Visibility.Collapsed;
+
+        /// <summary>
         /// Left pane header (split mode): visible when split enabled (including Home mode for accent bar)
         /// </summary>
         public Visibility IsLeftPaneHeaderVisible(bool isSplitViewEnabled, Models.ViewMode mode)
@@ -286,6 +293,7 @@ namespace Span
             SidebarCloudText.Text = _loc.Get("Cloud");
             SidebarNetworkText.Text = _loc.Get("Network");
             SidebarServersText.Text = _loc.Get("Servers");
+            SidebarLocalServersText.Text = _loc.Get("LocalServers");
             RecycleBinLabel.Text = _loc.Get("RecycleBin");
 
             // --- Main sort menu items ---

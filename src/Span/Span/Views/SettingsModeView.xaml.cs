@@ -246,6 +246,7 @@ public sealed partial class SettingsModeView : UserControl
             SidebarShowCloudToggle.IsOn = _settings.SidebarShowCloud;
             SidebarShowNetworkToggle.IsOn = _settings.SidebarShowNetwork;
             SidebarShowServersToggle.IsOn = _settings.SidebarShowServers;
+            SidebarShowLocalServersToggle.IsOn = _settings.SidebarShowLocalServers;
             SidebarShowRecycleBinToggle.IsOn = _settings.SidebarShowRecycleBin;
 
             // Browsing
@@ -799,6 +800,7 @@ public sealed partial class SettingsModeView : UserControl
             SidebarShowCloudLabel.Text = _loc.Get("Settings_Cloud") ?? "Cloud";
             SidebarShowNetworkLabel.Text = _loc.Get("Settings_Network") ?? "Network";
             SidebarShowServersLabel.Text = _loc.Get("Settings_Servers") ?? "Servers";
+            SidebarShowLocalServersLabel.Text = _loc.Get("Settings_LocalServers") ?? "Local Servers";
             SidebarShowRecycleBinLabel.Text = _loc.Get("Settings_RecycleBin") ?? "Recycle Bin";
 
             // Tools
@@ -826,10 +828,10 @@ public sealed partial class SettingsModeView : UserControl
             CrashReportLabel.Text = _loc.Get("Settings_CrashReport");
             CrashReportDesc.Text = _loc.Get("Settings_CrashReportDesc");
             DefaultFMLabel.Text = _loc.Get("Settings_DefaultFileManager") ?? "기본 파일 관리자";
-            DefaultFMDesc.Text = _loc.Get("Settings_DefaultFMDesc") ?? "폴더/드라이브를 열 때 SPAN Finder 사용";
+            DefaultFMDesc.Text = _loc.Get("Settings_DefaultFMDesc") ?? "폴더/드라이브를 열 때 WON 사용";
             DefaultFMInfo1.Text = _loc.Get("Settings_DefaultFMInfo1") ?? "• 등록 시 UAC(관리자 권한) 승인이 필요합니다. 승인해야 정상 동작합니다.";
-            DefaultFMInfo2.Text = _loc.Get("Settings_DefaultFMInfo2") ?? "• 해제 시에도 UAC 승인이 필요합니다. SPAN Finder를 제거하기 전에 반드시 이 설정을 먼저 해제하세요.";
-            DefaultFMInfo3.Text = _loc.Get("Settings_DefaultFMInfo3") ?? "ℹ 이 설정을 해제하지 않고 앱을 삭제하면 폴더가 열리지 않을 수 있습니다. 그런 경우 SPAN Finder를 다시 설치해 이 설정을 해제하세요.";
+            DefaultFMInfo2.Text = _loc.Get("Settings_DefaultFMInfo2") ?? "• 해제 시에도 UAC 승인이 필요합니다. WON을 제거하기 전에 반드시 이 설정을 먼저 해제하세요.";
+            DefaultFMInfo3.Text = _loc.Get("Settings_DefaultFMInfo3") ?? "ℹ 이 설정을 해제하지 않고 앱을 삭제하면 폴더가 열리지 않을 수 있습니다. 그런 경우 WON을 다시 설치해 이 설정을 해제하세요.";
             DefaultFMRepairLabel.Text = _loc.Get("Settings_DefaultFMRepair") ?? "폴더 연결 복구";
             DefaultFMRepairDesc.Text = _loc.Get("Settings_DefaultFMRepairDesc") ?? "이전 기본 파일 관리자 설정이 남긴 항목 때문에 일부 앱에서 폴더 열기가 실패할 수 있습니다. UAC 승인이 필요합니다.";
             DefaultFMRepairBtn.Content = _loc.Get("Settings_DefaultFMRepairButton") ?? "복구";
@@ -846,7 +848,7 @@ public sealed partial class SettingsModeView : UserControl
 
             // Support Development
             SupportTitle.Text = _loc.Get("Settings_SupportTitle") ?? "Support Development";
-            SupportDesc.Text = _loc.Get("Settings_SupportDesc") ?? "SPAN Finder is a free open-source project. Your support means a lot!";
+            SupportDesc.Text = _loc.Get("Settings_SupportDesc") ?? "WON is a free open-source project. Your support means a lot!";
             SupportGitHubDesc.Text = _loc.Get("Settings_SupportGitHubDesc") ?? "Sponsor on GitHub";
             SupportStoreTitle.Text = _loc.Get("Settings_SupportStoreTitle") ?? "Microsoft Store";
             SupportStoreDesc.Text = _loc.Get("Settings_SupportStoreDesc") ?? "Support via Store purchase";
@@ -1992,6 +1994,7 @@ public sealed partial class SettingsModeView : UserControl
         _settings.SidebarShowCloud = SidebarShowCloudToggle.IsOn;
         _settings.SidebarShowNetwork = SidebarShowNetworkToggle.IsOn;
         _settings.SidebarShowServers = SidebarShowServersToggle.IsOn;
+        _settings.SidebarShowLocalServers = SidebarShowLocalServersToggle.IsOn;
         _settings.SidebarShowRecycleBin = SidebarShowRecycleBinToggle.IsOn;
 
         // 모든 열린 창에 즉시 적용

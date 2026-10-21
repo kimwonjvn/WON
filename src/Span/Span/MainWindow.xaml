@@ -54,7 +54,7 @@
             <!-- App Icon & Title -->
             <StackPanel Orientation="Horizontal" Grid.Column="0" VerticalAlignment="Center" Margin="16,0,16,0" Spacing="8">
                 <Image Source="/Assets/Square44x44Logo.png" Height="16" Width="16"/>
-                <TextBlock x:Name="AppTitleText" Text="SPAN Finder" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource SpanTextSecondaryBrush}"/>
+                <TextBlock x:Name="AppTitleText" Text="WON" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource SpanTextSecondaryBrush}"/>
             </StackPanel>
             
             <!-- Dynamic Tabs -->
@@ -186,7 +186,7 @@
                   Background="{ThemeResource SpanBgLayer2Brush}"
                   CornerRadius="4" VerticalAlignment="Center"
                   Padding="4,0"
-                  Visibility="{x:Bind IsSingleNonSettingsVisible(ViewModel.IsSplitViewEnabled, ViewModel.CurrentViewMode), Mode=OneWay}">
+                  Visibility="{x:Bind IsMainAddressBarVisible(ViewModel.IsSplitViewEnabled, ViewModel.CurrentViewMode, ViewModel.IsAddressBarShown, ViewModel.IsAddressBarPeek), Mode=OneWay}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
@@ -659,6 +659,54 @@
                                                           Margin="0,0,-4,-4"
                                                           Visibility="{x:Bind AuthBadgeVisibility}"/>
                                             </Grid>
+                                            <TextBlock Grid.Column="1" Text="{x:Bind Name}" FontSize="{Binding ItemFontSize, Source={StaticResource FontScale}}"
+                                                       VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+
+                        <!-- ═══════ Section 5a: 로컬 서버 (주소창에 입력한 \\서버) ═══════ -->
+                        <StackPanel x:Name="SidebarLocalServersSection" Visibility="{x:Bind ViewModel.HasLocalServers, Mode=OneWay}">
+                            <Rectangle Height="1" Fill="{ThemeResource SpanBorderSubtleBrush}" Margin="12,12"/>
+                            <Grid Height="24" Padding="12,0" Background="Transparent"
+                                  Tapped="OnSidebarSectionHeaderTapped" Tag="LocalServers"
+                                  RightTapped="OnSidebarSectionHeaderRightTapped"
+                                  PointerEntered="OnSidebarItemPointerEntered" PointerExited="OnSidebarItemPointerExited" PointerPressed="OnSidebarItemPointerPressed" PointerReleased="OnSidebarItemPointerReleased">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <FontIcon Glyph="&#xE70D;" FontSize="10" Margin="0,0,6,0"
+                                          VerticalAlignment="Center"
+                                          RenderTransformOrigin="0.5,0.5">
+                                    <FontIcon.RenderTransform>
+                                        <RotateTransform Angle="{x:Bind helpers:ConverterHelpers.ChevronAngle(ViewModel.IsLocalServersExpanded), Mode=OneWay}"/>
+                                    </FontIcon.RenderTransform>
+                                </FontIcon>
+                                <TextBlock x:Name="SidebarLocalServersText" Grid.Column="1" Text="로컬 서버"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource SpanTextTertiaryBrush}" FontWeight="SemiBold"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.LocalServerDrives, Mode=OneWay}"
+                                          Visibility="{x:Bind ViewModel.IsLocalServersExpanded, Mode=OneWay}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="models:DriveItem">
+                                        <Grid Height="26" Padding="12,0,8,0" Background="Transparent"
+                                              ToolTipService.ToolTip="{x:Bind Path}"
+                                              Tapped="OnLocalServerTapped" RightTapped="OnLocalServerRightTapped"
+                                              PointerEntered="OnSidebarItemPointerEntered" PointerExited="OnSidebarItemPointerExited" PointerPressed="OnSidebarItemPointerPressed" PointerReleased="OnSidebarItemPointerReleased">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{x:Bind IconGlyph}"
+                                                       FontFamily="{StaticResource RemixIcons}" FontSize="{Binding IconFontSize, Source={StaticResource FontScale}}"
+                                                       Foreground="{ThemeResource SpanTextSecondaryBrush}"
+                                                       VerticalAlignment="Center" Margin="0,0,12,0"/>
                                             <TextBlock Grid.Column="1" Text="{x:Bind Name}" FontSize="{Binding ItemFontSize, Source={StaticResource FontScale}}"
                                                        VerticalAlignment="Center"
                                                        TextTrimming="CharacterEllipsis"/>

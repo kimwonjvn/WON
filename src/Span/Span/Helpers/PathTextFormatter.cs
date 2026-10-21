@@ -41,8 +41,8 @@ public static class PathTextFormatter
     }
 
     /// <summary>
-    /// SPAN 내부 압축 경로(<c>archive://D:\a.zip/dir/f.txt</c>)를 탐색기 형식(<c>D:\a.zip\dir\f.txt</c>)으로
-    /// 바꾼다. 주소창 표시와 같은 규칙이고, SPAN 주소창은 이 형식을 다시 압축 경로로 해석한다.
+    /// WON 내부 압축 경로(<c>archive://D:\a.zip/dir/f.txt</c>)를 탐색기 형식(<c>D:\a.zip\dir\f.txt</c>)으로
+    /// 바꾼다. 주소창 표시와 같은 규칙이고, WON 주소창은 이 형식을 다시 압축 경로로 해석한다.
     /// 원격(ftp/sftp) 등 다른 경로는 그대로 둔다.
     /// </summary>
     public static string ToDisplayPath(string path)

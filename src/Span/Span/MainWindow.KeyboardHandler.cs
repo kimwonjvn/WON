@@ -862,7 +862,7 @@ namespace Span
                 case ShortcutCommands.ShowProperties: HandleShowProperties(); return true;
                 case ShortcutCommands.ShowHelp: ToggleHelpOverlay(); return true;
                 case ShortcutCommands.OpenHelp:
-                    // Span Finder 온라인 가이드 사이트 열기 (기본 브라우저)
+                    // WON 온라인 가이드 사이트 열기 (기본 브라우저)
                     _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://github.com/kimwonjvn/WON"));
                     return true;
 
@@ -1012,6 +1012,15 @@ namespace Span
                 case ShortcutCommands.SettingsSidebarNetwork:
                     settings.SidebarShowNetwork = !settings.SidebarShowNetwork;
                     ShowSettingToast("Settings_SidebarShowNetwork", settings.SidebarShowNetwork);
+                    return true;
+                case ShortcutCommands.SettingsAddressBar:
+                    ViewModel.IsAddressBarPeek = false;
+                    ViewModel.IsAddressBarShown = !ViewModel.IsAddressBarShown;
+                    ShowSettingToast("Settings_ShowAddressBar", ViewModel.IsAddressBarShown);
+                    return true;
+                case ShortcutCommands.SettingsSidebarLocalServers:
+                    settings.SidebarShowLocalServers = !settings.SidebarShowLocalServers;
+                    ShowSettingToast("Settings_SidebarShowLocalServers", settings.SidebarShowLocalServers);
                     return true;
                 case ShortcutCommands.SettingsSidebarServers:
                     settings.SidebarShowServers = !settings.SidebarShowServers;

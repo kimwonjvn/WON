@@ -90,7 +90,7 @@ namespace Span.Services
                 _icon = new TaskbarIcon
                 {
                     IconSource = new BitmapImage { UriSource = iconUri },
-                    ToolTipText = "SPAN Finder",
+                    ToolTipText = "WON",
                     NoLeftClickDelay = true,
                 };
 

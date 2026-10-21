@@ -43,7 +43,7 @@ namespace Span.Services
         /// <summary>
         /// 폴더 뷰(목록)에서 파일을 열 때 쓴다. Issue #72: 기본 앱이 사진 앱인 로컬 이미지는 탐색기처럼
         /// 폴더 보기 문맥과 함께 열어, 사진 앱에서 ←/→로 같은 폴더의 다른 사진으로 넘어가게 한다
-        /// (다운로드한 사진도 확인 창 없이, SPAN의 정렬 순서대로). 그 밖의 파일이거나 실패하면 <see cref="OpenFile"/>과 같다.
+        /// (다운로드한 사진도 확인 창 없이, WON의 정렬 순서대로). 그 밖의 파일이거나 실패하면 <see cref="OpenFile"/>과 같다.
         /// </summary>
         /// <param name="folder">파일이 보이는 폴더(표시 순서·위치를 넘기는 데 쓴다). 모르면 null — 이름순으로 이동.</param>
         public void OpenFileFromFolderView(string filePath, ViewModels.FolderViewModel? folder)

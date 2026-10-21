@@ -16,11 +16,11 @@ namespace Span.Helpers;
 /// (DelegateExecute {BFEC0C93-…}, windows.system.launcher.dll)는 site에서 SID_SFolderView →
 /// IFolderView2를 얻어 폴더·정렬·선택 위치를 열 파일 항목에 숨겨 붙이고, 사진 앱은 그것으로 이웃
 /// 목록을 만든다. 경로만 넘기는 ShellExecute에는 site가 없어 사진 한 장만 열렸다.
-/// 여기서는 SPAN이 그 폴더 보기를 흉내 낸 최소 site를 SEE_MASK_FLAG_HINST_IS_SITE(공식 플래그)로 넘긴다.
+/// 여기서는 WON이 그 폴더 보기를 흉내 낸 최소 site를 SEE_MASK_FLAG_HINST_IS_SITE(공식 플래그)로 넘긴다.
 ///
 /// 실측(Windows 11 26200, 사진 앱 2026.11090): 일반·다운로드(MOTW) 사진 모두 이동되고 확인 창 없음
 /// (파일 활성화 경로라 사진 앱의 "신뢰할 수 있는 출처" 검사가 없다), 넘긴 정렬 순서를 따름,
-/// SPAN 패키지 안에서도 동작. ms-photos:viewer URI는 다운로드 사진에서 확인 창이 떠 쓰지 않는다.
+/// WON 패키지 안에서도 동작. ms-photos:viewer URI는 다운로드 사진에서 확인 창이 떠 쓰지 않는다.
 ///
 /// 처리기가 site를 읽는 방식은 문서화되지 않았다. Windows가 바꾸면 처리기는 원래 선택으로 열어
 /// 지금처럼 사진 한 장만 보인다(안전한 실패). 로그의 CallMask가 0이면 그 경우다.
@@ -74,7 +74,7 @@ internal static class FolderContextLauncher
     }
 
     /// <summary>
-    /// SPAN의 정렬(FolderViewModel.CurrentSortBy 값)을 Windows 속성 정렬로 바꾼다. 알 수 없으면 정렬 없음
+    /// WON의 정렬(FolderViewModel.CurrentSortBy 값)을 Windows 속성 정렬로 바꾼다. 알 수 없으면 정렬 없음
     /// (사진 앱 기본 순서 = 이름순).
     /// </summary>
     public static SortColumn[] BuildSortColumns(string? sortBy, bool ascending)

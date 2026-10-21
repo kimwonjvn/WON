@@ -22,7 +22,7 @@ namespace Span.ViewModels
     public partial class MainViewModel : ObservableObject
     {
         [ObservableProperty]
-        private string _appTitle = "SPAN Finder";
+        private string _appTitle = "WON";
 
         public ObservableCollection<TabItem> Tabs { get; } = new();
         public ObservableCollection<DriveItem> Drives { get; } = new();
@@ -51,6 +51,78 @@ namespace Span.ViewModels
         /// 사이드바 "서버" 그룹: 저장된 원격 연결 (SFTP/FTP/FTPS/SMB)
         /// </summary>
         public ObservableCollection<DriveItem> ServerDrives { get; } = new();
+
+        /// <summary>
+        /// 사이드바 "로컬 서버" 그룹: 주소창에 입력해 접속한 UNC 서버 (\\서버). 설정에 영속화된다.
+        /// </summary>
+        public ObservableCollection<DriveItem> LocalServerDrives { get; } = new();
+        private const string LocalServersKey = "LocalServersList";
+        private const int MaxLocalServers = 50;
+
+        [ObservableProperty]
+        private bool _isLocalServersExpanded = true;
+
+        partial void OnIsLocalServersExpandedChanged(bool value)
+        {
+            if (_isCleaningUp) return;
+            try { App.Current.Services.GetRequiredService<SettingsService>().Set("SidebarLocalServersExpanded", value); } catch (Exception ex) { Helpers.DebugLogger.Log($"[MainViewModel] SidebarLocalServersExpanded save failed: {ex.Message}"); }
+        }
+
+        public bool HasLocalServers => LocalServerDrives.Count > 0;
+
+        private static DriveItem MakeLocalServerItem(string host) => new()
+        {
+            Name = host,
+            Path = @"\\" + host,
+            IconGlyph = Span.Services.IconService.Current?.ServerGlyph ?? "\uF0DF",
+            DriveType = "LocalServer"
+        };
+
+        private void LoadLocalServers(SettingsService settings)
+        {
+            LocalServerDrives.Clear();
+            var raw = settings.Get(LocalServersKey, string.Empty);
+            foreach (var host in raw.Split('|', StringSplitOptions.RemoveEmptyEntries))
+                LocalServerDrives.Add(MakeLocalServerItem(host));
+        }
+
+        private void SaveLocalServers()
+        {
+            try
+            {
+                var joined = string.Join("|", LocalServerDrives.Select(d => d.Name));
+                App.Current.Services.GetRequiredService<SettingsService>().Set(LocalServersKey, joined);
+            }
+            catch (Exception ex) { Helpers.DebugLogger.Log($"[MainViewModel] LocalServers save failed: {ex.Message}"); }
+        }
+
+        /// <summary>주소창에 입력된 UNC 경로의 서버명을 "로컬 서버" 목록에 등록한다 (중복/가상 호스트 제외).</summary>
+        public void RegisterLocalServerFromPath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !path.StartsWith(@"\\", StringComparison.Ordinal)) return;
+            if (path.StartsWith(@"\\?\", StringComparison.Ordinal) || path.StartsWith(@"\\.\", StringComparison.Ordinal)) return;
+
+            var host = path.Substring(2).Split('\\', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+            if (string.IsNullOrEmpty(host) || host.Length > 255 || host.Contains('|')) return;
+            // WSL 가상 호스트는 서버가 아님
+            if (host.Equals("wsl$", StringComparison.OrdinalIgnoreCase)
+                || host.Equals("wsl.localhost", StringComparison.OrdinalIgnoreCase)) return;
+            if (LocalServerDrives.Any(d => d.Name.Equals(host, StringComparison.OrdinalIgnoreCase))) return;
+
+            LocalServerDrives.Add(MakeLocalServerItem(host));
+            while (LocalServerDrives.Count > MaxLocalServers) LocalServerDrives.RemoveAt(0);
+            SaveLocalServers();
+            OnPropertyChanged(nameof(HasLocalServers));
+        }
+
+        public void RemoveLocalServer(string host)
+        {
+            var item = LocalServerDrives.FirstOrDefault(d => d.Name.Equals(host, StringComparison.OrdinalIgnoreCase));
+            if (item == null) return;
+            LocalServerDrives.Remove(item);
+            SaveLocalServers();
+            OnPropertyChanged(nameof(HasLocalServers));
+        }
 
         // ── File Shelf ──────────────────────────────────────────
         public ObservableCollection<ShelfItem> ShelfItems { get; } = new();
@@ -90,6 +162,20 @@ namespace Span.ViewModels
 
         [ObservableProperty]
         private bool _isServerDrivesExpanded = true;
+
+        /// <summary>상단 경로 표시줄(주소창) 고정 표시 여부. 숨김 상태여도 Ctrl+L로 일시 호출 가능.</summary>
+        [ObservableProperty]
+        private bool _isAddressBarShown = true;
+
+        /// <summary>숨김 상태에서 Ctrl+L 등으로 일시적으로 보여 주는 중인지 여부.</summary>
+        [ObservableProperty]
+        private bool _isAddressBarPeek;
+
+        partial void OnIsAddressBarShownChanged(bool value)
+        {
+            if (_isCleaningUp) return;
+            try { App.Current.Services.GetRequiredService<SettingsService>().Set("ShowAddressBar", value); } catch (Exception ex) { Helpers.DebugLogger.Log($"[MainViewModel] ShowAddressBar save failed: {ex.Message}"); }
+        }
 
         partial void OnIsServerDrivesExpandedChanged(bool value)
         {
@@ -597,6 +683,9 @@ namespace Span.ViewModels
                 _isCloudDrivesExpanded = settings.Get("SidebarCloudExpanded", true);
                 _isNetworkDrivesExpanded = settings.Get("SidebarNetworkExpanded", true);
                 _isServerDrivesExpanded = settings.Get("SidebarServersExpanded", true);
+                _isAddressBarShown = settings.Get("ShowAddressBar", true);
+                _isLocalServersExpanded = settings.Get("SidebarLocalServersExpanded", true);
+                LoadLocalServers(settings);
             }
             catch (Exception ex) { Helpers.DebugLogger.Log($"[MainViewModel] Sidebar expand state load failed: {ex.Message}"); }
 

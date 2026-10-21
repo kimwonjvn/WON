@@ -27,7 +27,7 @@ internal enum ClipboardWriteResult
 /// 기존에는 <c>SetDataProvider</c>(지연 렌더링)만 등록하고 <c>Clipboard.Flush()</c>를
 /// 호출하지 않았다. 탐색기가 붙여넣는 시점에 SPAN으로 콜백이 들어와야 하는데,
 /// 경로 해석 실패 시 빈 목록을 그대로 넘기거나 콜백이 늦으면 탐색기에
-/// CLIPBRD_E_BAD_DATA(0x800401D3)가 발생했다. 또 SPAN을 종료하면 클립보드 내용이
+/// CLIPBRD_E_BAD_DATA(0x800401D3)가 발생했다. 또 WON을 종료하면 클립보드 내용이
 /// 사라졌다.
 ///
 /// 이 헬퍼는 StorageItem을 미리 만들어 즉시 넣고(Flush로 시스템에 소유권 이전),
