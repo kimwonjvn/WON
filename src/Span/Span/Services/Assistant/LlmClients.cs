@@ -22,6 +22,8 @@ public sealed class LlmMessage
     /// <summary>Role == Tool 일 때 응답 대상 호출 ID.</summary>
     public string ToolCallId { get; init; } = string.Empty;
     public bool IsError { get; init; }
+    /// <summary>Role == User 일 때 사용자가 첨부한 이미지/텍스트 파일.</summary>
+    public IReadOnlyList<LlmAttachment> Attachments { get; init; } = Array.Empty<LlmAttachment>();
 }
 
 public sealed record LlmReply(string Text, IReadOnlyList<LlmToolCall> ToolCalls);
@@ -171,7 +173,32 @@ public sealed class ClaudeClient : ILlmClient
                 var m = messages[i];
                 if (m.Role == LlmRole.User)
                 {
-                    w.WriteStartObject(); w.WriteString("role", "user"); w.WriteString("content", m.Text); w.WriteEndObject();
+                    w.WriteStartObject(); w.WriteString("role", "user");
+                    if (m.Attachments.Count == 0) w.WriteString("content", m.Text);
+                    else
+                    {
+                        w.WriteStartArray("content");
+                        foreach (var a in m.Attachments)
+                        {
+                            w.WriteStartObject();
+                            if (a.Kind == LlmAttachmentKind.Image)
+                            {
+                                w.WriteString("type", "image");
+                                w.WriteStartObject("source");
+                                w.WriteString("type", "base64"); w.WriteString("media_type", a.MediaType);
+                                w.WriteString("data", Convert.ToBase64String(a.Data));
+                                w.WriteEndObject();
+                            }
+                            else { w.WriteString("type", "text"); w.WriteString("text", a.AsPromptText()); }
+                            w.WriteEndObject();
+                        }
+                        if (!string.IsNullOrEmpty(m.Text))
+                        {
+                            w.WriteStartObject(); w.WriteString("type", "text"); w.WriteString("text", m.Text); w.WriteEndObject();
+                        }
+                        w.WriteEndArray();
+                    }
+                    w.WriteEndObject();
                 }
                 else if (m.Role == LlmRole.Assistant)
                 {
@@ -296,7 +323,30 @@ public sealed class OpenAiClient : ILlmClient
                 switch (m.Role)
                 {
                     case LlmRole.User:
-                        w.WriteString("role", "user"); w.WriteString("content", m.Text);
+                        w.WriteString("role", "user");
+                        if (m.Attachments.Count == 0) w.WriteString("content", m.Text);
+                        else
+                        {
+                            w.WriteStartArray("content");
+                            foreach (var a in m.Attachments)
+                            {
+                                w.WriteStartObject();
+                                if (a.Kind == LlmAttachmentKind.Image)
+                                {
+                                    w.WriteString("type", "image_url");
+                                    w.WriteStartObject("image_url");
+                                    w.WriteString("url", $"data:{a.MediaType};base64,{Convert.ToBase64String(a.Data)}");
+                                    w.WriteEndObject();
+                                }
+                                else { w.WriteString("type", "text"); w.WriteString("text", a.AsPromptText()); }
+                                w.WriteEndObject();
+                            }
+                            if (!string.IsNullOrEmpty(m.Text))
+                            {
+                                w.WriteStartObject(); w.WriteString("type", "text"); w.WriteString("text", m.Text); w.WriteEndObject();
+                            }
+                            w.WriteEndArray();
+                        }
                         break;
                     case LlmRole.Assistant:
                         w.WriteString("role", "assistant");

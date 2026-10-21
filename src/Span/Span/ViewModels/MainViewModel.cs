@@ -53,11 +53,15 @@ namespace Span.ViewModels
         public ObservableCollection<DriveItem> ServerDrives { get; } = new();
 
         /// <summary>
-        /// 사이드바 "로컬 서버" 그룹: 주소창에 입력해 접속한 UNC 서버 (\\서버). 설정에 영속화된다.
+        /// 사이드바 "로컬 서버" 그룹: 주소창 접속으로 자동 등록되거나 직접 추가한 UNC 위치(\\서버, \\서버\공유).
+        /// 표시 이름(별칭)은 실제 폴더 이름과 무관하게 이 목록에만 저장된다. 설정에 영속화된다.
         /// </summary>
         public ObservableCollection<DriveItem> LocalServerDrives { get; } = new();
-        private const string LocalServersKey = "LocalServersList";
+        private const string LocalServersKey = "LocalServersV2";
+        private const string LegacyLocalServersKey = "LocalServersList";
         private const int MaxLocalServers = 50;
+        private const int MaxLocalServerAliasLength = 60;
+        private readonly List<(string Path, string? Alias)> _localServers = new();
 
         [ObservableProperty]
         private bool _isLocalServersExpanded = true;
@@ -70,58 +74,154 @@ namespace Span.ViewModels
 
         public bool HasLocalServers => LocalServerDrives.Count > 0;
 
-        private static DriveItem MakeLocalServerItem(string host) => new()
+        private static DriveItem MakeLocalServerItem(string path, string? alias) => new()
         {
-            Name = host,
-            Path = @"\\" + host,
+            Name = string.IsNullOrEmpty(alias) ? path.TrimStart('\\') : alias,
+            Path = path,
             IconGlyph = Span.Services.IconService.Current?.ServerGlyph ?? "\uF0DF",
             DriveType = "LocalServer"
         };
 
+        /// <summary>UNC 경로를 저장 형식(\\host[\share[\sub]], 끝 구분자 없음)으로 정규화한다. 서버 위치가 아니면 null.</summary>
+        public static string? NormalizeLocalServerPath(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return null;
+            var p = input.Trim().Replace('/', '\\');
+            if (!p.StartsWith(@"\\", StringComparison.Ordinal)) return null;
+            if (p.StartsWith(@"\\?\", StringComparison.Ordinal) || p.StartsWith(@"\\.\", StringComparison.Ordinal)) return null;
+
+            var parts = p.Substring(2).Split('\\', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0) return null;
+            var host = parts[0];
+            if (host.Length > 255) return null;
+            // WSL 가상 호스트는 서버가 아님
+            if (host.Equals("wsl$", StringComparison.OrdinalIgnoreCase)
+                || host.Equals("wsl.localhost", StringComparison.OrdinalIgnoreCase)) return null;
+            var invalid = System.IO.Path.GetInvalidFileNameChars();
+            if (parts.Any(part => part.IndexOfAny(invalid) >= 0)) return null;
+            return @"\\" + string.Join('\\', parts);
+        }
+
+        private static string? CleanLocalServerAlias(string? alias)
+        {
+            if (alias == null) return null;
+            var s = new string(alias.Where(c => !char.IsControl(c)).ToArray()).Trim();
+            if (s.Length > MaxLocalServerAliasLength) s = s.Substring(0, MaxLocalServerAliasLength);
+            return s.Length == 0 ? null : s;
+        }
+
         private void LoadLocalServers(SettingsService settings)
         {
-            LocalServerDrives.Clear();
+            _localServers.Clear();
             var raw = settings.Get(LocalServersKey, string.Empty);
-            foreach (var host in raw.Split('|', StringSplitOptions.RemoveEmptyEntries))
-                LocalServerDrives.Add(MakeLocalServerItem(host));
+            if (!string.IsNullOrEmpty(raw))
+            {
+                // 한 줄에 하나: "경로" 또는 "경로\t별칭"
+                foreach (var line in raw.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var tab = line.IndexOf('\t');
+                    var path = NormalizeLocalServerPath(tab < 0 ? line : line.Substring(0, tab));
+                    if (path == null || _localServers.Any(e => e.Path.Equals(path, StringComparison.OrdinalIgnoreCase))) continue;
+                    _localServers.Add((path, tab < 0 ? null : CleanLocalServerAlias(line.Substring(tab + 1))));
+                }
+            }
+            else
+            {
+                // v2.2.0 이전 형식: '|'로 구분된 서버명 목록
+                foreach (var host in settings.Get(LegacyLocalServersKey, string.Empty).Split('|', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var path = NormalizeLocalServerPath(@"\\" + host);
+                    if (path == null || _localServers.Any(e => e.Path.Equals(path, StringComparison.OrdinalIgnoreCase))) continue;
+                    _localServers.Add((path, null));
+                }
+            }
+            RebuildLocalServerItems();
+        }
+
+        private void RebuildLocalServerItems()
+        {
+            LocalServerDrives.Clear();
+            foreach (var (path, alias) in _localServers)
+                LocalServerDrives.Add(MakeLocalServerItem(path, alias));
+            OnPropertyChanged(nameof(HasLocalServers));
         }
 
         private void SaveLocalServers()
         {
             try
             {
-                var joined = string.Join("|", LocalServerDrives.Select(d => d.Name));
+                var joined = string.Join("\n", _localServers.Select(e => e.Alias == null ? e.Path : e.Path + "\t" + e.Alias));
                 App.Current.Services.GetRequiredService<SettingsService>().Set(LocalServersKey, joined);
             }
             catch (Exception ex) { Helpers.DebugLogger.Log($"[MainViewModel] LocalServers save failed: {ex.Message}"); }
         }
 
-        /// <summary>주소창에 입력된 UNC 경로의 서버명을 "로컬 서버" 목록에 등록한다 (중복/가상 호스트 제외).</summary>
-        public void RegisterLocalServerFromPath(string path)
+        /// <summary>서버에 SMB(445/139) 연결이 되는지 확인한다. 오타 입력이 목록에 남지 않게 하는 용도.</summary>
+        public static async Task<bool> IsServerReachableAsync(string host)
         {
-            if (string.IsNullOrWhiteSpace(path) || !path.StartsWith(@"\\", StringComparison.Ordinal)) return;
-            if (path.StartsWith(@"\\?\", StringComparison.Ordinal) || path.StartsWith(@"\\.\", StringComparison.Ordinal)) return;
-
-            var host = path.Substring(2).Split('\\', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-            if (string.IsNullOrEmpty(host) || host.Length > 255 || host.Contains('|')) return;
-            // WSL 가상 호스트는 서버가 아님
-            if (host.Equals("wsl$", StringComparison.OrdinalIgnoreCase)
-                || host.Equals("wsl.localhost", StringComparison.OrdinalIgnoreCase)) return;
-            if (LocalServerDrives.Any(d => d.Name.Equals(host, StringComparison.OrdinalIgnoreCase))) return;
-
-            LocalServerDrives.Add(MakeLocalServerItem(host));
-            while (LocalServerDrives.Count > MaxLocalServers) LocalServerDrives.RemoveAt(0);
-            SaveLocalServers();
-            OnPropertyChanged(nameof(HasLocalServers));
+            foreach (var port in new[] { 445, 139 })
+            {
+                try
+                {
+                    using var client = new System.Net.Sockets.TcpClient();
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                    await client.ConnectAsync(host, port, cts.Token).ConfigureAwait(false);
+                    return true;
+                }
+                catch { /* 다음 포트 시도 */ }
+            }
+            return false;
         }
 
-        public void RemoveLocalServer(string host)
+        /// <summary>주소창에 입력된 UNC 경로의 서버(\\host)를 "로컬 서버" 목록에 등록한다 (이미 있으면 그대로 둔다).</summary>
+        public void RegisterLocalServerFromPath(string path)
         {
-            var item = LocalServerDrives.FirstOrDefault(d => d.Name.Equals(host, StringComparison.OrdinalIgnoreCase));
-            if (item == null) return;
-            LocalServerDrives.Remove(item);
+            var normalized = NormalizeLocalServerPath(path);
+            if (normalized == null) return;
+            var host = normalized.Substring(2).Split('\\')[0];
+            AddLocalServer(@"\\" + host, null);
+        }
+
+        /// <summary>위치를 추가한다. 이미 있으면 별칭이 주어진 경우에만 갱신한다. 유효한 UNC 경로가 아니면 false.</summary>
+        public bool AddLocalServer(string path, string? alias)
+        {
+            var normalized = NormalizeLocalServerPath(path);
+            if (normalized == null) return false;
+            var cleaned = CleanLocalServerAlias(alias);
+            var i = _localServers.FindIndex(e => e.Path.Equals(normalized, StringComparison.OrdinalIgnoreCase));
+            if (i >= 0)
+            {
+                if (cleaned == null || cleaned == _localServers[i].Alias) return true;
+                _localServers[i] = (_localServers[i].Path, cleaned);
+            }
+            else
+            {
+                _localServers.Add((normalized, cleaned));
+                while (_localServers.Count > MaxLocalServers) _localServers.RemoveAt(0);
+            }
             SaveLocalServers();
-            OnPropertyChanged(nameof(HasLocalServers));
+            RebuildLocalServerItems();
+            return true;
+        }
+
+        public string? GetLocalServerAlias(string path)
+            => _localServers.FirstOrDefault(e => e.Path.Equals(path, StringComparison.OrdinalIgnoreCase)).Alias;
+
+        /// <summary>표시 이름 변경. alias가 비어 있으면 기본 이름(서버 경로)으로 되돌린다.</summary>
+        public void RenameLocalServer(string path, string? alias)
+        {
+            var i = _localServers.FindIndex(e => e.Path.Equals(path, StringComparison.OrdinalIgnoreCase));
+            if (i < 0) return;
+            _localServers[i] = (_localServers[i].Path, CleanLocalServerAlias(alias));
+            SaveLocalServers();
+            RebuildLocalServerItems();
+        }
+
+        public void RemoveLocalServer(string path)
+        {
+            if (_localServers.RemoveAll(e => e.Path.Equals(path, StringComparison.OrdinalIgnoreCase)) == 0) return;
+            SaveLocalServers();
+            RebuildLocalServerItems();
         }
 
         // ── File Shelf ──────────────────────────────────────────
@@ -883,9 +983,19 @@ namespace Span.ViewModels
             }
 
             // 사이드바 분리: 네트워크 드라이브 / 저장된 서버
+            // 저장된 서버와 같은 호스트의 ftp:// 바로가기는 "서버" 그룹에만 보여 준다 (중복 방지)
+            var savedHosts = new HashSet<string>(sortedConnections.Select(c => c.Host), StringComparer.OrdinalIgnoreCase);
             SidebarNetworkDrives.Clear();
             foreach (var d in NetworkDrives)
+            {
+                if (d.IsNetworkShortcut && d.Path.Contains("://"))
+                {
+                    string host;
+                    try { host = new Uri(d.Path).Host; } catch { host = ""; }
+                    if (host.Length > 0 && savedHosts.Contains(host)) continue;
+                }
                 SidebarNetworkDrives.Add(d);
+            }
             ServerDrives.Clear();
             foreach (var conn in sortedConnections)
                 ServerDrives.Add(DriveItem.FromConnection(conn));

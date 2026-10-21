@@ -186,6 +186,7 @@ namespace Span
                         case Windows.System.VirtualKey.T:       // Ctrl+T: New Tab
                         case Windows.System.VirtualKey.W:       // Ctrl+W: Close Tab
                         case Windows.System.VirtualKey.L:       // Ctrl+L: Address Bar
+                        case Windows.System.VirtualKey.K:       // Ctrl+Shift+K: AI Assistant
                         case Windows.System.VirtualKey.H:       // Ctrl+H: Toggle Hidden
                         case Windows.System.VirtualKey.N:       // Ctrl+N: New Window
                         case Windows.System.VirtualKey.Tab:     // Ctrl+Tab: Tab cycling
@@ -223,6 +224,7 @@ namespace Span
                             case Windows.System.VirtualKey.T:
                             case Windows.System.VirtualKey.W:
                             case Windows.System.VirtualKey.L:
+                            case Windows.System.VirtualKey.K:
                             case Windows.System.VirtualKey.N:
                             case Windows.System.VirtualKey.Tab:     // Ctrl+Tab: Tab cycling
                                 break; // fall through to main handler

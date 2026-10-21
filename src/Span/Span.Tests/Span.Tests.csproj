@@ -54,6 +54,8 @@
     <Compile Include="..\Span\Services\Assistant\AssistantTools.cs" Link="Sources\Services\Assistant\AssistantTools.cs" />
     <Compile Include="..\Span\Services\Assistant\LlmClients.cs" Link="Sources\Services\Assistant\LlmClients.cs" />
     <Compile Include="..\Span\Services\Assistant\AssistantAgent.cs" Link="Sources\Services\Assistant\AssistantAgent.cs" />
+    <Compile Include="..\Span\Services\Assistant\AssistantAttachments.cs" Link="Sources\Services\Assistant\AssistantAttachments.cs" />
+    <Compile Include="..\Span\Services\Assistant\AssistantSkills.cs" Link="Sources\Services\Assistant\AssistantSkills.cs" />
     <Compile Include="..\Span\Helpers\ViewModeExtensions.cs" Link="Sources\Helpers\ViewModeExtensions.cs" />
     <Compile Include="..\Span\Helpers\SearchQueryParser.cs" Link="Sources\Helpers\SearchQueryParser.cs" />
     <Compile Include="..\Span\Helpers\WildcardRegex.cs" Link="Sources\Helpers\WildcardRegex.cs" />

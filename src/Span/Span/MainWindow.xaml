@@ -322,6 +322,10 @@
                             Visibility="{x:Bind IsNotSpecialMode(ViewModel.CurrentViewMode), Mode=OneWay}">
                         <FontIcon x:Name="SplitViewIcon" FontFamily="{StaticResource RemixIcons}" Glyph="{StaticResource Icon_SplitView}" FontSize="16"/>
                     </Button>
+                    <Button x:Name="AssistantToolbarButton" AutomationProperties.AutomationId="Button_Assistant" Style="{StaticResource UnifiedButtonStyle}"
+                            ToolTipService.ToolTip="AI Assistant (Ctrl+Shift+K)" Click="OnAssistantToolbarClick">
+                        <FontIcon Glyph="&#xE8BD;" FontSize="15"/>
+                    </Button>
                 </StackPanel>
 
                 <!-- ═══ RecycleBin Commands (icon-only, shown in RecycleBin mode) ═══ -->
@@ -362,11 +366,12 @@
         </Grid>
 
         <!-- 3. Main Area (Sidebar + Splitter + Content) -->
-        <Grid Grid.Row="2">
+        <Grid x:Name="MainAreaGrid" Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="SidebarCol" Width="200"/> <!-- Sidebar -->
                 <ColumnDefinition x:Name="SidebarSplitterCol" Width="Auto"/> <!-- Splitter -->
                 <ColumnDefinition Width="*"/>   <!-- Content -->
+                <ColumnDefinition Width="Auto"/> <!-- AI Assistant panel -->
             </Grid.ColumnDefinitions>
 
             <!-- Sidebar - Hybrid 3-Section Layout -->
@@ -564,7 +569,7 @@
                         </StackPanel>
 
                         <!-- ═══════ Section 4: 클라우드 (CloudDrives 있을 때만) ═══════ -->
-                        <StackPanel x:Name="SidebarCloudSection" Visibility="{x:Bind ViewModel.HasCloudDrives, Mode=OneWay}">
+                        <StackPanel x:Name="SidebarCloudSection">
                             <Rectangle Height="1" Fill="{ThemeResource SpanBorderSubtleBrush}" Margin="12,12"/>
                             <Grid Height="24" Padding="12,0" Background="Transparent"
                                   Tapped="OnSidebarSectionHeaderTapped" Tag="Cloud"
@@ -612,7 +617,7 @@
                         </StackPanel>
 
                         <!-- ═══════ Section 5: 네트워크 (NetworkAndRemoteDrives 있을 때만) ═══════ -->
-                        <StackPanel x:Name="SidebarNetworkSection" Visibility="{x:Bind ViewModel.HasNetworkDrives, Mode=OneWay}">
+                        <StackPanel x:Name="SidebarNetworkSection">
                             <Rectangle Height="1" Fill="{ThemeResource SpanBorderSubtleBrush}" Margin="12,12"/>
                             <Grid Height="24" Padding="12,0" Background="Transparent"
                                   Tapped="OnSidebarSectionHeaderTapped" Tag="Network"
@@ -669,7 +674,7 @@
                         </StackPanel>
 
                         <!-- ═══════ Section 5a: 로컬 서버 (주소창에 입력한 \\서버) ═══════ -->
-                        <StackPanel x:Name="SidebarLocalServersSection" Visibility="{x:Bind ViewModel.HasLocalServers, Mode=OneWay}">
+                        <StackPanel x:Name="SidebarLocalServersSection">
                             <Rectangle Height="1" Fill="{ThemeResource SpanBorderSubtleBrush}" Margin="12,12"/>
                             <Grid Height="24" Padding="12,0" Background="Transparent"
                                   Tapped="OnSidebarSectionHeaderTapped" Tag="LocalServers"
@@ -678,6 +683,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <FontIcon Glyph="&#xE70D;" FontSize="10" Margin="0,0,6,0"
                                           VerticalAlignment="Center"
@@ -690,6 +696,11 @@
                                            Style="{StaticResource CaptionTextBlockStyle}"
                                            Foreground="{ThemeResource SpanTextTertiaryBrush}" FontWeight="SemiBold"
                                            VerticalAlignment="Center"/>
+                                <!-- 위치 추가 버튼 -->
+                                <FontIcon x:Name="SidebarLocalServersAddButton" Grid.Column="2" Glyph="&#xE710;" FontSize="11"
+                                          Foreground="{ThemeResource SpanTextTertiaryBrush}"
+                                          VerticalAlignment="Center" Margin="8,0,0,0"
+                                          Tapped="OnAddLocalServerTapped"/>
                             </Grid>
                             <ItemsControl ItemsSource="{x:Bind ViewModel.LocalServerDrives, Mode=OneWay}"
                                           Visibility="{x:Bind ViewModel.IsLocalServersExpanded, Mode=OneWay}">
@@ -743,8 +754,7 @@
                                 <FontIcon x:Name="SidebarServersAddButton" Grid.Column="2" Glyph="&#xE710;" FontSize="11"
                                           Foreground="{ThemeResource SpanTextTertiaryBrush}"
                                           VerticalAlignment="Center" Margin="8,0,0,0"
-                                          Tapped="OnAddServerTapped"
-                                          ToolTipService.ToolTip="Add server"/>
+                                          Tapped="OnAddServerTapped"/>
                             </Grid>
                             <ItemsControl ItemsSource="{x:Bind ViewModel.ServerDrives, Mode=OneWay}"
                                           Visibility="{x:Bind ViewModel.IsServerDrivesExpanded, Mode=OneWay}">
@@ -1781,6 +1791,127 @@
                         Background="{ThemeResource SpanAccentDimBrush}"
                         Visibility="{x:Bind IsSplitVisible(ViewModel.IsSplitViewEnabled), Mode=OneWay}"/>
             </Grid>
+
+            <!-- ═══════ AI Assistant side panel (slides in from the right) ═══════ -->
+            <Border x:Name="AssistantPanel" Grid.Column="3" Width="0" Visibility="Collapsed" SizeChanged="OnAssistantPanelSizeChanged">
+                <Grid x:Name="AssistantPanelInner" Width="420" HorizontalAlignment="Left"
+                      Background="{ThemeResource SpanBgLayer1Brush}"
+                      BorderBrush="{ThemeResource SpanBorderSubtleBrush}" BorderThickness="1,0,0,0"
+                      AllowDrop="True" DragOver="OnAssistantDragOver" Drop="OnAssistantDrop">
+                    <Grid.RenderTransform>
+                        <TranslateTransform x:Name="AssistantPanelShift" X="0"/>
+                    </Grid.RenderTransform>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <Grid Grid.Row="0" Padding="16,10,8,10" BorderBrush="{ThemeResource SpanBorderSubtleBrush}" BorderThickness="0,0,0,1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock x:Name="AssistantTitle" Text="WON Assistant" FontSize="14" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="AssistantSubtitle" FontSize="11" Opacity="0.6" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2">
+                            <Button x:Name="AssistantNewChatButton" Style="{StaticResource UnifiedButtonStyle}" Click="OnAssistantNewChatClick">
+                                <FontIcon Glyph="&#xE710;" FontSize="14"/>
+                            </Button>
+                            <Button x:Name="AssistantSettingsButton" Style="{StaticResource UnifiedButtonStyle}" Click="OnAssistantSettingsClick">
+                                <FontIcon Glyph="&#xE713;" FontSize="14"/>
+                            </Button>
+                            <Button x:Name="AssistantCloseButton" Style="{StaticResource UnifiedButtonStyle}" Click="OnAssistantCloseClick">
+                                <FontIcon Glyph="&#xE711;" FontSize="12"/>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Body: settings (collapsible) + conversation -->
+                    <Grid Grid.Row="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Border x:Name="AssistantSettingsArea" Visibility="Collapsed" Padding="16,12"
+                                BorderBrush="{ThemeResource SpanBorderSubtleBrush}" BorderThickness="0,0,0,1">
+                            <StackPanel Spacing="8">
+                                <ToggleSwitch x:Name="AssistantEnableToggle" OnContent="" OffContent="" Toggled="OnAssistantEnableToggled"/>
+                                <TextBlock x:Name="AssistantPrivacyText" FontSize="12" Opacity="0.75" TextWrapping="Wrap"/>
+                                <PasswordBox x:Name="AssistantKeyBox"/>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button x:Name="AssistantKeySaveButton" Click="OnAssistantKeySaveClick"/>
+                                    <Button x:Name="AssistantKeyClearButton" Click="OnAssistantKeyClearClick"/>
+                                </StackPanel>
+                                <TextBox x:Name="AssistantBaseUrlBox" LostFocus="OnAssistantBaseUrlLostFocus"/>
+                                <TextBlock x:Name="AssistantSettingsStatus" FontSize="12" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+
+                        <ScrollViewer x:Name="AssistantScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel x:Name="AssistantMessages" Padding="16,12,16,8" Spacing="16"/>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <!-- Composer -->
+                    <Border Grid.Row="2" Margin="12,4,12,12" Padding="10,8,8,8" CornerRadius="14"
+                            Background="{ThemeResource SpanBgLayer2Brush}"
+                            BorderBrush="{ThemeResource SpanBorderSubtleBrush}" BorderThickness="1">
+                        <StackPanel Spacing="6">
+                            <ScrollViewer x:Name="AssistantChipsScroll" Visibility="Collapsed"
+                                          HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <StackPanel x:Name="AssistantChips" Orientation="Horizontal" Spacing="6" Padding="0,0,0,4"/>
+                            </ScrollViewer>
+                            <TextBlock x:Name="AssistantAttachNote" Visibility="Collapsed" FontSize="11" Opacity="0.7" TextWrapping="Wrap"/>
+                            <TextBox x:Name="AssistantInput" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="44" MaxHeight="140"
+                                     BorderThickness="0" Background="Transparent" Padding="2,4"
+                                     PreviewKeyDown="OnAssistantInputKeyDown" Paste="OnAssistantInputPaste"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Button x:Name="AssistantAttachButton" Grid.Column="0" Style="{StaticResource UnifiedButtonStyle}">
+                                    <FontIcon Glyph="&#xE723;" FontSize="15"/>
+                                    <Button.Flyout>
+                                        <MenuFlyout Placement="TopEdgeAlignedLeft">
+                                            <MenuFlyoutItem x:Name="AssistantAttachFileItem" Click="OnAssistantAttachFileClick">
+                                                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8A5;"/></MenuFlyoutItem.Icon>
+                                            </MenuFlyoutItem>
+                                            <MenuFlyoutItem x:Name="AssistantAttachImageItem" Click="OnAssistantAttachImageClick">
+                                                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xEB9F;"/></MenuFlyoutItem.Icon>
+                                            </MenuFlyoutItem>
+                                        </MenuFlyout>
+                                    </Button.Flyout>
+                                </Button>
+                                <Button x:Name="AssistantSkillsButton" Grid.Column="1" Style="{StaticResource UnifiedButtonStyle}" Click="OnAssistantSkillsClick">
+                                    <StackPanel Orientation="Horizontal" Spacing="5">
+                                        <FontIcon Glyph="&#xE9D9;" FontSize="14"/>
+                                        <TextBlock x:Name="AssistantSkillsText" FontSize="12" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button x:Name="AssistantModelButton" Grid.Column="3" Style="{StaticResource UnifiedButtonStyle}">
+                                    <StackPanel Orientation="Horizontal" Spacing="5">
+                                        <TextBlock x:Name="AssistantModelText" FontSize="12" VerticalAlignment="Center"/>
+                                        <FontIcon Glyph="&#xE70D;" FontSize="9"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button x:Name="AssistantSendButton" Grid.Column="4" Margin="6,0,0,0" Width="32" Height="32" Padding="0" CornerRadius="16"
+                                        Style="{StaticResource AccentButtonStyle}" Click="OnAssistantSendClick">
+                                    <FontIcon x:Name="AssistantSendIcon" Glyph="&#xE74A;" FontSize="14"/>
+                                </Button>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
 
             <!-- Sidebar edge shadow removed: splitter alone provides sufficient separation -->
 

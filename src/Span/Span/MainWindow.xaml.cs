@@ -2598,8 +2598,8 @@ namespace Span
             else if (e.PropertyName == nameof(MainViewModel.HasCloudDrives) ||
                      e.PropertyName == nameof(MainViewModel.HasNetworkDrives))
             {
-                // Sidebar 스케일은 이제 FontScaleService + XAML {Binding} 으로 자동 반영됨.
-                // (기존 _iconFontScaleLevel 기반 fan-out 재적용 불필요 — Phase B/C 제거)
+                // 항목 유무가 바뀌면 섹션 표시 여부(설정 && 항목 있음)를 다시 계산한다.
+                Helpers.DispatcherHelper.SafeEnqueue(DispatcherQueue, ApplySidebarSectionVisibility);
             }
             else if (e.PropertyName == nameof(MainViewModel.IsAddressBarShown) ||
                      e.PropertyName == nameof(MainViewModel.IsAddressBarPeek))
@@ -3247,7 +3247,7 @@ namespace Span
             e.Handled = true;
         }
 
-        /// <summary>로컬 서버(\\\\host) 항목 탭: 해당 서버의 공유 목록으로 이동.</summary>
+        /// <summary>로컬 서버 항목 탭: 주소창 입력과 같은 방식으로 해당 위치를 루트로 연다.</summary>
         private void OnLocalServerTapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
         {
             if (sender is not Grid grid || grid.DataContext is not DriveItem drive) return;
@@ -3259,7 +3259,13 @@ namespace Span
                     ViewModel.SwitchViewMode(ViewModel.ResolveViewModeFromHome());
                     UpdateViewModeVisibility();
                 }
-                _ = ViewModel.ActiveExplorer?.NavigateToPath(drive.Path);
+                var path = drive.Path.TrimEnd('\\', '/');
+                var folder = new Models.FolderItem
+                {
+                    Name = Helpers.UncPathHelper.IsServerRoot(path) ? path.TrimStart('\\') : System.IO.Path.GetFileName(path),
+                    Path = path
+                };
+                _ = ViewModel.ActiveExplorer?.NavigateTo(folder);
                 if (ViewModel.CurrentViewMode == ViewMode.MillerColumns) FocusColumnAsync(0); else FocusActiveView();
             }
             catch (Exception ex)
@@ -3268,20 +3274,119 @@ namespace Span
             }
         }
 
-        /// <summary>로컬 서버 항목 우클릭: 목록에서 제거.</summary>
+        /// <summary>로컬 서버 항목 우클릭: 표시 이름 변경 / 목록에서 제거.</summary>
         private void OnLocalServerRightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
         {
             if (sender is not Grid grid || grid.DataContext is not DriveItem drive) return;
-            var item = new MenuFlyoutItem
+            var flyout = new MenuFlyout();
+
+            var renameItem = new MenuFlyoutItem
+            {
+                Text = _loc.Get("LocalServer_Rename") ?? "Set display name",
+                Icon = new FontIcon { Glyph = "\uE8AC" }
+            };
+            renameItem.Click += async (_, _) => await ShowLocalServerDialogAsync(drive.Path);
+            flyout.Items.Add(renameItem);
+
+            var removeItem = new MenuFlyoutItem
             {
                 Text = _loc.Get("Sidebar_RemoveFromList") ?? "Remove from list",
                 Icon = new FontIcon { Glyph = "\uE74D" }
             };
-            item.Click += (_, _) => ViewModel.RemoveLocalServer(drive.Name);
-            var flyout = new MenuFlyout();
-            flyout.Items.Add(item);
+            removeItem.Click += (_, _) => ViewModel.RemoveLocalServer(drive.Path);
+            flyout.Items.Add(removeItem);
+
             flyout.ShowAt(grid, new Microsoft.UI.Xaml.Controls.Primitives.FlyoutShowOptions { Position = e.GetPosition(grid) });
             e.Handled = true;
+        }
+
+        /// <summary>로컬 서버 섹션 헤더의 + 버튼: 위치와 표시 이름을 입력해 추가한다.</summary>
+        private async void OnAddLocalServerTapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+        {
+            e.Handled = true;
+            try { await ShowLocalServerDialogAsync(null); }
+            catch (Exception ex) { Helpers.DebugLogger.Log($"[Sidebar] OnAddLocalServerTapped error: {ex.Message}"); }
+        }
+
+        /// <summary>
+        /// 로컬 서버 추가/표시 이름 변경 대화상자.
+        /// existingPath가 null이면 추가(위치 + 표시 이름), 아니면 해당 위치의 표시 이름만 변경한다.
+        /// 표시 이름은 이 목록에만 저장되며 실제 폴더 이름은 바뀌지 않는다.
+        /// </summary>
+        private async Task ShowLocalServerDialogAsync(string? existingPath)
+        {
+            bool isEdit = existingPath != null;
+            var pathBox = new TextBox
+            {
+                Header = _loc.Get("LocalServer_Path") ?? "Location",
+                PlaceholderText = @"\\server  /  \\server\share",
+                Text = existingPath ?? string.Empty,
+                IsEnabled = !isEdit
+            };
+            var nameBox = new TextBox
+            {
+                Header = _loc.Get("LocalServer_Name") ?? "Display name",
+                PlaceholderText = _loc.Get("LocalServer_NameHint") ?? "Optional",
+                Text = existingPath != null ? (ViewModel.GetLocalServerAlias(existingPath) ?? string.Empty) : string.Empty,
+                MaxLength = 60
+            };
+            var errorText = new TextBlock
+            {
+                Text = _loc.Get("LocalServer_Invalid") ?? "Enter a UNC path such as \\\\server or \\\\server\\share.",
+                Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.IndianRed),
+                TextWrapping = TextWrapping.Wrap,
+                Visibility = Visibility.Collapsed
+            };
+            var panel = new StackPanel { Spacing = 12, MinWidth = 380 };
+            panel.Children.Add(pathBox);
+            panel.Children.Add(nameBox);
+            panel.Children.Add(errorText);
+
+            var dialog = new ContentDialog
+            {
+                Title = isEdit ? (_loc.Get("LocalServer_Rename") ?? "Set display name") : (_loc.Get("LocalServer_Add") ?? "Add local server"),
+                Content = panel,
+                PrimaryButtonText = _loc.Get("Save"),
+                CloseButtonText = _loc.Get("Cancel"),
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.Content.XamlRoot
+            };
+            dialog.PrimaryButtonClick += (_, args) =>
+            {
+                if (!isEdit && MainViewModel.NormalizeLocalServerPath(pathBox.Text) == null)
+                {
+                    errorText.Visibility = Visibility.Visible;
+                    args.Cancel = true;
+                }
+            };
+
+            var result = await ShowContentDialogSafeAsync(dialog);
+            if (result != ContentDialogResult.Primary) return;
+
+            if (isEdit) ViewModel.RenameLocalServer(existingPath!, nameBox.Text);
+            else ViewModel.AddLocalServer(pathBox.Text, nameBox.Text);
+        }
+
+        /// <summary>
+        /// 주소창으로 접속한 UNC 서버를 "로컬 서버"에 등록한다.
+        /// 공유가 실제로 열렸으면(verified) 바로 등록하고, 서버 루트만 입력한 경우에는 SMB 포트가 응답할 때만 등록해서
+        /// 오타나 접속 불가 서버가 목록에 남지 않게 한다.
+        /// </summary>
+        private async void RegisterLocalServerIfReachable(string path, bool verified)
+        {
+            try
+            {
+                var normalized = MainViewModel.NormalizeLocalServerPath(path);
+                if (normalized == null) return;
+                var host = normalized.Substring(2).Split('\\')[0];
+                if (!verified && !await MainViewModel.IsServerReachableAsync(host)) return;
+                if (_isClosed) return;
+                DispatcherQueue.TryEnqueue(() => ViewModel.RegisterLocalServerFromPath(normalized));
+            }
+            catch (Exception ex)
+            {
+                Helpers.DebugLogger.Log($"[LocalServers] register failed: {ex.Message}");
+            }
         }
 
         /// <summary>서버 섹션 헤더의 + 버튼: 서버 연결 대화상자를 연다.</summary>
@@ -4418,8 +4523,9 @@ namespace Span
             SidebarHomeSection.Visibility = _settings.SidebarShowHome ? v : c;
             SidebarFavoritesSection.Visibility = _settings.SidebarShowFavorites ? v : c;
             SidebarLocalDrivesSection.Visibility = _settings.SidebarShowLocalDrives ? v : c;
-            SidebarCloudSection.Visibility = _settings.SidebarShowCloud ? v : c;
-            SidebarNetworkSection.Visibility = _settings.SidebarShowNetwork ? v : c;
+            // 클라우드/네트워크는 항목이 있을 때만 보이고(설정이 켜진 경우), 서버/로컬 서버는 + 버튼 때문에 항상 보인다.
+            SidebarCloudSection.Visibility = _settings.SidebarShowCloud && ViewModel.HasCloudDrives ? v : c;
+            SidebarNetworkSection.Visibility = _settings.SidebarShowNetwork && ViewModel.HasNetworkDrives ? v : c;
             SidebarServersSection.Visibility = _settings.SidebarShowServers ? v : c;
             SidebarLocalServersSection.Visibility = _settings.SidebarShowLocalServers ? v : c;
             SidebarRecycleBinSection.Visibility = _settings.SidebarShowRecycleBin ? v : c;
@@ -4873,7 +4979,13 @@ namespace Span
                     };
                     openItem.Click += (_, _) =>
                     {
-                        for (int i = 0; i < idx && i < columns.Count; i++) columns[i].IsColumnCollapsed = false;
+                        // 바로 위(가장 가까운) 접힌 상위 컬럼 1개만 연다.
+                        for (int i = Math.Min(idx, columns.Count) - 1; i >= 0; i--)
+                        {
+                            if (!columns[i].IsColumnCollapsed) continue;
+                            columns[i].IsColumnCollapsed = false;
+                            break;
+                        }
                     };
                     flyout.Items.Add(openItem);
                 }

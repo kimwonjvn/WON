@@ -1009,9 +1009,6 @@ namespace Span
                 }
             }
 
-            // \\서버 형태로 접속하면 사이드바 "로컬 서버"에 자동 등록
-            ViewModel.RegisterLocalServerFromPath(path);
-
             var explorer = ResolveExplorerForAddressBar(sender);
 
             // Home/RecycleBin 모드에서 경로 입력 시 MillerColumns로 전환
@@ -1045,6 +1042,8 @@ namespace Span
                     Path = path.TrimEnd('\\', '/')
                 };
                 _ = explorer.NavigateTo(rootFolder);
+                // \\서버 접속 → 사이드바 "로컬 서버"에 등록 (SMB 응답이 있을 때만)
+                RegisterLocalServerIfReachable(path, verified: false);
                 return;
             }
 
@@ -1062,6 +1061,7 @@ namespace Span
                     Path = path
                 };
                 _ = explorer.NavigateTo(dirFolder);
+                if (isUnc) RegisterLocalServerIfReachable(path, verified: true);
             }
             else if (System.IO.File.Exists(path))
             {

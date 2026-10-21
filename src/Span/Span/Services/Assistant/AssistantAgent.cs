@@ -23,9 +23,22 @@ public sealed class AssistantAgent
 {
     public const int MaxPlanSize = 200;
 
-    private readonly ILlmClient _client;
-    private readonly string? _currentFolder;
+    public const int MaxHistoryMessages = 60;
+
+    private ILlmClient _client;
     private readonly int _maxTurns;
+    private readonly List<LlmMessage> _history = new();
+
+    /// <summary>지금 앱에서 열려 있는 폴더 (대화 중에 바뀔 수 있다).</summary>
+    public string? CurrentFolder { get; set; }
+
+    /// <summary>켜진 스킬에서 만든 추가 지침 (<see cref="AssistantSkillPrompt.Build"/>).</summary>
+    public string SkillInstructions { get; set; } = string.Empty;
+
+    public int HistoryCount => _history.Count;
+
+    /// <summary>모델/서비스를 바꿔도 대화 기록은 유지된다.</summary>
+    public ILlmClient Client { get => _client; set => _client = value; }
     private readonly AssistantReadTools _read = new();
 
     private readonly List<PlannedOperation> _plan = new();
@@ -34,8 +47,16 @@ public sealed class AssistantAgent
     public AssistantAgent(ILlmClient client, string? currentFolder, int maxTurns = 8)
     {
         _client = client;
-        _currentFolder = currentFolder;
+        CurrentFolder = currentFolder;
         _maxTurns = maxTurns;
+    }
+
+    /// <summary>대화 기록과 계획을 모두 비운다 (새 대화).</summary>
+    public void ResetConversation()
+    {
+        _history.Clear();
+        _plan.Clear();
+        _plannedFolders.Clear();
     }
 
     public string BuildSystemPrompt() =>
@@ -43,38 +64,69 @@ public sealed class AssistantAgent
         "Help the user explore and organise folders using the provided tools.\n" +
         "Rules:\n" +
         "- Always use absolute Windows paths.\n" +
-        "- Use list_directory / search_files / get_file_info to look before you act. You can only see names, sizes and dates, never file contents.\n" +
+        "- Use list_directory / search_files / get_file_info to look before you act. Through the tools you can only see names, sizes and dates; file contents are visible only when the user attaches a file or image to a message.\n" +
         "- Tools starting with 'propose_' do NOT change anything: they queue an action that the user must approve. Never say a change has been made; say it is proposed.\n" +
         "- Never propose deleting unless the user explicitly asked for deletion. Deletion only moves items to the Recycle Bin.\n" +
         "- Keep plans small and exact; if the request is ambiguous, ask a short question instead of guessing.\n" +
         "- Reply in the user's language, concisely.\n" +
-        (string.IsNullOrEmpty(_currentFolder) ? "- No folder is currently open.\n" : $"- The folder currently open in the app is: {_currentFolder}\n");
+        (string.IsNullOrEmpty(CurrentFolder) ? "- No folder is currently open.\n" : $"- The folder currently open in the app is: {CurrentFolder}\n") +
+        SkillInstructions;
 
-    public async Task<AssistantResult> RunAsync(string userRequest, CancellationToken ct, Action<string>? progress = null)
+    /// <summary>
+    /// 사용자 메시지 한 건을 처리한다. 같은 인스턴스로 호출하면 이전 대화가 이어진다.
+    /// 이번 호출에서 제안된 변경만 Plan 으로 돌려준다 (이전 호출의 계획은 비운다).
+    /// 실패/취소하면 이번 호출에서 쌓인 대화 기록은 되돌려서 다음 호출이 깨끗하게 이어지게 한다.
+    /// </summary>
+    public async Task<AssistantResult> RunAsync(string userRequest, CancellationToken ct, Action<string>? progress = null,
+        IReadOnlyList<LlmAttachment>? attachments = null)
     {
+        TrimHistory();
+        _plan.Clear();
+        _plannedFolders.Clear();
+
         var system = BuildSystemPrompt();
-        var messages = new List<LlmMessage> { new() { Role = LlmRole.User, Text = userRequest } };
+        int mark = _history.Count;
+        _history.Add(new LlmMessage { Role = LlmRole.User, Text = userRequest, Attachments = attachments ?? Array.Empty<LlmAttachment>() });
         string lastText = string.Empty;
 
-        for (int turn = 0; turn < _maxTurns; turn++)
+        try
         {
-            ct.ThrowIfCancellationRequested();
-            var reply = await _client.SendAsync(system, messages, AssistantToolCatalog.All, ct).ConfigureAwait(false);
-            if (!string.IsNullOrWhiteSpace(reply.Text)) lastText = reply.Text;
-            messages.Add(new LlmMessage { Role = LlmRole.Assistant, Text = reply.Text, ToolCalls = reply.ToolCalls });
-
-            if (reply.ToolCalls.Count == 0)
-                return new AssistantResult { Text = lastText, Plan = _plan.ToList() };
-
-            foreach (var call in reply.ToolCalls)
+            for (int turn = 0; turn < _maxTurns; turn++)
             {
-                progress?.Invoke(call.Name);
-                var (result, isError) = HandleToolCall(call);
-                messages.Add(new LlmMessage { Role = LlmRole.Tool, ToolCallId = call.Id, Text = result, IsError = isError });
-            }
-        }
+                ct.ThrowIfCancellationRequested();
+                var reply = await _client.SendAsync(system, _history, AssistantToolCatalog.All, ct).ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(reply.Text)) lastText = reply.Text;
+                _history.Add(new LlmMessage { Role = LlmRole.Assistant, Text = reply.Text, ToolCalls = reply.ToolCalls });
 
-        return new AssistantResult { Text = lastText, Plan = _plan.ToList(), HitTurnLimit = true };
+                if (reply.ToolCalls.Count == 0)
+                    return new AssistantResult { Text = lastText, Plan = _plan.ToList() };
+
+                foreach (var call in reply.ToolCalls)
+                {
+                    progress?.Invoke(call.Name);
+                    var (result, isError) = HandleToolCall(call);
+                    _history.Add(new LlmMessage { Role = LlmRole.Tool, ToolCallId = call.Id, Text = result, IsError = isError });
+                }
+            }
+
+            return new AssistantResult { Text = lastText, Plan = _plan.ToList(), HitTurnLimit = true };
+        }
+        catch
+        {
+            _history.RemoveRange(mark, _history.Count - mark);
+            throw;
+        }
+    }
+
+    /// <summary>기록이 너무 길면 오래된 대화를 (사용자 메시지 경계에서) 잘라 낸다.</summary>
+    private void TrimHistory()
+    {
+        while (_history.Count > MaxHistoryMessages)
+        {
+            int next = _history.FindIndex(1, m => m.Role == LlmRole.User);
+            if (next < 0) break;
+            _history.RemoveRange(0, next);
+        }
     }
 
     internal (string Result, bool IsError) HandleToolCall(LlmToolCall call)

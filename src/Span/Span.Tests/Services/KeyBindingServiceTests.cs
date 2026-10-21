@@ -82,6 +82,20 @@ public class KeyBindingServiceTests
     }
 
     [TestMethod]
+    public void Resolve_CtrlShiftK_Assistant()
+    {
+        var cmd = _service.ResolveCommand(VirtualKey.K, ctrl: true, shift: true, alt: false, scanCode: 0);
+        Assert.AreEqual(ShortcutCommands.ToolsAssistant, cmd);
+    }
+
+    [TestMethod]
+    public void Resolve_CtrlShiftL_AddressBar()
+    {
+        var cmd = _service.ResolveCommand(VirtualKey.L, ctrl: true, shift: true, alt: false, scanCode: 0);
+        Assert.AreEqual(ShortcutCommands.SettingsAddressBar, cmd);
+    }
+
+    [TestMethod]
     public void Resolve_CtrlShiftC_CopyAsPath()
     {
         var cmd = _service.ResolveCommand(VirtualKey.C, ctrl: true, shift: true, alt: false, scanCode: 0);

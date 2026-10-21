@@ -169,6 +169,12 @@
             ("Column_Close", "Close this column", "이 열 닫기", "この列を閉じる", "关闭此列", "關閉此欄", "Diese Spalte schließen", "Cerrar esta columna", "Fermer cette colonne", "Fechar esta coluna"),
             ("Column_OpenParents", "Show parent columns", "상위 열 열기", "上位の列を表示", "显示上级列", "顯示上層欄", "Übergeordnete Spalten anzeigen", "Mostrar columnas superiores", "Afficher les colonnes parentes", "Mostrar colunas superiores"),
             ("Sidebar_RemoveFromList", "Remove from list", "목록에서 제거", "リストから削除", "从列表中移除", "從清單移除", "Aus Liste entfernen", "Quitar de la lista", "Retirer de la liste", "Remover da lista"),
+            ("LocalServer_Add", "Add local server", "로컬 서버 위치 추가", "ローカルサーバーを追加", "添加本地服务器", "新增本機伺服器", "Lokalen Server hinzufügen", "Añadir servidor local", "Ajouter un serveur local", "Adicionar servidor local"),
+            ("LocalServer_Rename", "Set display name", "표시 이름 지정", "表示名を設定", "设置显示名称", "設定顯示名稱", "Anzeigenamen festlegen", "Establecer nombre", "Définir le nom affiché", "Definir nome de exibição"),
+            ("LocalServer_Path", "Location", "위치", "場所", "位置", "位置", "Speicherort", "Ubicación", "Emplacement", "Local"),
+            ("LocalServer_Name", "Display name", "표시 이름", "表示名", "显示名称", "顯示名稱", "Anzeigename", "Nombre", "Nom affiché", "Nome de exibição"),
+            ("LocalServer_NameHint", "Shown in the sidebar only (folder is not renamed)", "사이드바에만 표시됩니다 (실제 폴더 이름은 바뀌지 않음)", "サイドバーにのみ表示されます（フォルダ名は変わりません）", "仅显示在侧边栏（不会重命名文件夹）", "僅顯示於側邊欄（不會重新命名資料夾）", "Nur in der Seitenleiste (Ordner wird nicht umbenannt)", "Solo en la barra lateral (no cambia el nombre de la carpeta)", "Affiché uniquement dans la barre latérale (le dossier n'est pas renommé)", "Exibido apenas na barra lateral (a pasta não é renomeada)"),
+            ("LocalServer_Invalid", "Enter a network path such as \\\\server or \\\\server\\share.", "\\\\서버 또는 \\\\서버\\공유 형식의 경로를 입력하세요.", "\\\\server または \\\\server\\share の形式で入力してください。", "请输入 \\\\server 或 \\\\server\\share 格式的路径。", "請輸入 \\\\server 或 \\\\server\\share 格式的路徑。", "Geben Sie einen Netzwerkpfad wie \\\\server oder \\\\server\\share ein.", "Introduzca una ruta como \\\\servidor o \\\\servidor\\recurso.", "Saisissez un chemin réseau tel que \\\\serveur ou \\\\serveur\\partage.", "Informe um caminho como \\\\servidor ou \\\\servidor\\pasta."),
 
             // ── Network browse ──────────────────────────────────────────────
             ("Register", "Register", "등록", "登録", "注册", "註冊", "Registrieren", "Registrar", "Inscrire", "Registrar"),
