@@ -263,6 +263,16 @@ namespace Span.ViewModels
         private bool _isActive = false; // Indicates if this column has focus
 
         /// <summary>
+        /// Miller 컬럼 접힘 여부 (WON). 접힌 컬럼은 화면에서만 숨겨지고 탐색 상태(Columns)는 그대로 유지된다.
+        /// </summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsColumnExpanded))]
+        private bool _isColumnCollapsed;
+
+        /// <summary>XAML 바인딩용 (bool → Visibility 자동 변환).</summary>
+        public bool IsColumnExpanded => !IsColumnCollapsed;
+
+        /// <summary>
         /// 정렬 중 플래그 - true일 때 PropertyChanged 이벤트 무시
         /// </summary>
         public bool IsSorting { get; set; } = false;

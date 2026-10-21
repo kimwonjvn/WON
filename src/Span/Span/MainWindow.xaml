@@ -1059,7 +1059,8 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate x:DataType="viewmodels:FolderViewModel">
-                                            <Grid Width="{Binding MillerColumnWidth, Source={StaticResource FontScale}}" MinWidth="150">
+                                            <Grid Width="{Binding MillerColumnWidth, Source={StaticResource FontScale}}" MinWidth="150"
+                                                  Visibility="{x:Bind IsColumnExpanded, Mode=OneWay}">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*"/>
                                                     <ColumnDefinition Width="Auto"/>
@@ -1504,7 +1505,8 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate x:DataType="viewmodels:FolderViewModel">
-                                            <Grid Width="{Binding MillerColumnWidth, Source={StaticResource FontScale}}" MinWidth="150">
+                                            <Grid Width="{Binding MillerColumnWidth, Source={StaticResource FontScale}}" MinWidth="150"
+                                                  Visibility="{x:Bind IsColumnExpanded, Mode=OneWay}">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*"/>
                                                     <ColumnDefinition Width="Auto"/>

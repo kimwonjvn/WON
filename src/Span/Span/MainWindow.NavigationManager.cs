@@ -458,6 +458,11 @@ namespace Span
             {
                 if (_isClosed) return;
 
+                // 접힌 컬럼으로 포커스를 옮기면(예: ← 키) 자동으로 펼친다
+                var foldCols = ViewModel.ActiveExplorer?.Columns;
+                if (foldCols != null && columnIndex >= 0 && columnIndex < foldCols.Count && foldCols[columnIndex].IsColumnCollapsed)
+                    foldCols[columnIndex].IsColumnCollapsed = false;
+
                 // Task.Delay(50) 대신 DispatcherQueue Low 우선순위로 XAML 레이아웃 완료 대기
                 // — 50ms 고정 지연을 제거하여 탭 전환 속도 개선
                 var tcs = new System.Threading.Tasks.TaskCompletionSource();

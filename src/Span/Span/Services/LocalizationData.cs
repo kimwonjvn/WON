@@ -166,6 +166,8 @@
             ("Sidebar_HideSection", "Hide section", "섹션 숨기기", "セクションを非表示", "隐藏此部分", "隱藏此區段", "Abschnitt ausblenden", "Ocultar sección", "Masquer la section", "Ocultar seção"),
             ("Servers", "Servers", "서버", "サーバー", "服务器", "伺服器", "Server", "Servidores", "Serveurs", "Servidores"),
             ("LocalServers", "Local Servers", "로컬 서버", "ローカルサーバー", "本地服务器", "本機伺服器", "Lokale Server", "Servidores locales", "Serveurs locaux", "Servidores locais"),
+            ("Column_Close", "Close this column", "이 열 닫기", "この列を閉じる", "关闭此列", "關閉此欄", "Diese Spalte schließen", "Cerrar esta columna", "Fermer cette colonne", "Fechar esta coluna"),
+            ("Column_OpenParents", "Show parent columns", "상위 열 열기", "上位の列を表示", "显示上级列", "顯示上層欄", "Übergeordnete Spalten anzeigen", "Mostrar columnas superiores", "Afficher les colonnes parentes", "Mostrar colunas superiores"),
             ("Sidebar_RemoveFromList", "Remove from list", "목록에서 제거", "リストから削除", "从列表中移除", "從清單移除", "Aus Liste entfernen", "Quitar de la lista", "Retirer de la liste", "Remover da lista"),
 
             // ── Network browse ──────────────────────────────────────────────

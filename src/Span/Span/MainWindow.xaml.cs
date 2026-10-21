@@ -4815,6 +4815,66 @@ namespace Span
         }
 
         /// <summary>
+        /// 우클릭 메뉴에 컬럼 접기/펴기 항목을 덧붙인다.
+        /// - "이 열 닫기": 마지막(가장 깊은) 컬럼이 아닌 컬럼에서 표시
+        /// - "상위 열 열기": 이 컬럼보다 왼쪽에 접힌 컬럼이 있을 때 표시
+        /// </summary>
+        private void AppendColumnFoldItems(MenuFlyout flyout, DependencyObject source)
+        {
+            try
+            {
+                // 이 컬럼의 ListView(DataContext = FolderViewModel)를 비주얼 트리에서 찾는다.
+                FolderViewModel? column = null;
+                for (DependencyObject? d = source; d != null; d = VisualTreeHelper.GetParent(d))
+                {
+                    if (d is ListView lv && lv.DataContext is FolderViewModel fvm) { column = fvm; break; }
+                }
+                if (column == null) return;
+
+                var explorers = new List<ExplorerViewModel?> { ViewModel.ActiveExplorer, ViewModel.LeftExplorer, ViewModel.RightExplorer };
+                explorers.AddRange(ViewModel.Tabs.Select(t => t.Explorer));
+                var columns = explorers.FirstOrDefault(x => x != null && x.Columns.Contains(column))?.Columns;
+                if (columns == null) return;
+
+                int idx = columns.IndexOf(column);
+                bool canClose = idx >= 0 && idx < columns.Count - 1;
+                bool canOpenParents = false;
+                for (int i = 0; i < idx; i++) if (columns[i].IsColumnCollapsed) { canOpenParents = true; break; }
+                if (!canClose && !canOpenParents) return;
+
+                if (flyout.Items.Count > 0) flyout.Items.Add(new MenuFlyoutSeparator());
+
+                if (canClose)
+                {
+                    var closeItem = new MenuFlyoutItem
+                    {
+                        Text = _loc.Get("Column_Close") ?? "Close this column",
+                        Icon = new FontIcon { Glyph = "\uE8BB" }
+                    };
+                    closeItem.Click += (_, _) => column.IsColumnCollapsed = true;
+                    flyout.Items.Add(closeItem);
+                }
+                if (canOpenParents)
+                {
+                    var openItem = new MenuFlyoutItem
+                    {
+                        Text = _loc.Get("Column_OpenParents") ?? "Show parent columns",
+                        Icon = new FontIcon { Glyph = "\uE76B" }
+                    };
+                    openItem.Click += (_, _) =>
+                    {
+                        for (int i = 0; i < idx && i < columns.Count; i++) columns[i].IsColumnCollapsed = false;
+                    };
+                    flyout.Items.Add(openItem);
+                }
+            }
+            catch (Exception ex)
+            {
+                Helpers.DebugLogger.Log($"[ColumnFold] AppendColumnFoldItems error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// Miller Column ListView 빈 공간 우클릭 → 빈 영역 컨텍스트 메뉴.
         /// 아이템 위에서의 우클릭은 OnFolderRightTapped/OnFileRightTapped에서 e.Handled=true 처리됨.
         /// </summary>
@@ -4830,6 +4890,7 @@ namespace Span
 
                 _contextMenuService.SetLastEmptyAreaContext(folderVm.Path, this, listView, e.GetPosition(listView));
                 var flyout = await _contextMenuService.BuildEmptyAreaMenuAsync(folderVm.Path, this, forceShellExtensions: shiftHeld);
+                AppendColumnFoldItems(flyout, listView);
                 flyout.ShowAt(listView, new Microsoft.UI.Xaml.Controls.Primitives.FlyoutShowOptions
                 {
                     Position = e.GetPosition(listView)
@@ -5051,6 +5112,7 @@ namespace Span
 
                     _contextMenuService.SetLastMenuContext(folder, this, grid, e.GetPosition(grid));
                     var flyout = await _contextMenuService.BuildFolderMenuAsync(folder, this, forceShellExtensions: shiftHeld);
+                    AppendColumnFoldItems(flyout, grid);
                     flyout.ShowAt(grid, new Microsoft.UI.Xaml.Controls.Primitives.FlyoutShowOptions
                     {
                         Position = e.GetPosition(grid)
@@ -5081,6 +5143,7 @@ namespace Span
                     _contextMenuService.SetLastMenuContext(file, this, grid, e.GetPosition(grid));
                     Helpers.DebugLogger.Log($"[ContextMenu] OnFileRightTapped START: {file.Name} hasThumbnail={file.HasThumbnail}");
                     var flyout = await _contextMenuService.BuildFileMenuAsync(file, this, forceShellExtensions: shiftHeld);
+                    AppendColumnFoldItems(flyout, grid);
                     Helpers.DebugLogger.Log($"[ContextMenu] OnFileRightTapped BUILT: {file.Name} items={flyout.Items.Count}");
                     flyout.ShowAt(grid, new Microsoft.UI.Xaml.Controls.Primitives.FlyoutShowOptions
                     {
