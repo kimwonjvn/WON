@@ -43,6 +43,7 @@ namespace Span.Models
         public const string ViewList = "span.view.list";
         public const string ViewIcon = "span.view.icon";
         public const string ToggleSplitView = "span.view.splitView";
+        public const string ToolsAssistant = "span.tools.assistant";
         public const string TogglePreview = "span.view.preview";
         public const string EqualizeColumns = "span.view.equalizeColumns";
         public const string AutoFitColumns = "span.view.autoFitColumns";
@@ -186,6 +187,7 @@ namespace Span.Models
             { ViewList, "View" },
             { ViewIcon, "View" },
             { ToggleSplitView, "View" },
+            { ToolsAssistant, "Window" },
             { TogglePreview, "View" },
             { EqualizeColumns, "View" },
             { AutoFitColumns, "View" },
@@ -321,6 +323,7 @@ namespace Span.Models
             { ViewList, "Shortcut_ViewList" },
             { ViewIcon, "Shortcut_ViewIcon" },
             { ToggleSplitView, "Shortcut_ToggleSplitView" },
+            { ToolsAssistant, "Shortcut_ToolsAssistant" },
             { TogglePreview, "Shortcut_TogglePreview" },
             { EqualizeColumns, "Shortcut_EqualizeColumns" },
             { AutoFitColumns, "Shortcut_AutoFitColumns" },

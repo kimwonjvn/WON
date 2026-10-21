@@ -930,6 +930,7 @@
             ("Shortcut_ViewList", "List", "목록", "リスト", "列表", "清單", "Liste", "Lista", "Liste", "Lista"),
             ("Shortcut_ViewIcon", "Icons", "아이콘", "アイコン", "图标", "圖示", "Symbole", "Íconos", "Icônes", "Ícones"),
             ("Shortcut_ToggleSplitView", "Split view", "분할 뷰", "分割ビュー", "分割视图", "分割檢視", "Geteilte Ansicht", "Vista dividida", "Vue fractionnée", "Visualização dividida"),
+            ("Shortcut_ToolsAssistant", "AI assistant (Claude / OpenAI)", "AI 어시스턴트 (Claude / OpenAI)", "AIアシスタント (Claude / OpenAI)", "AI 助手 (Claude / OpenAI)", "AI 助理 (Claude / OpenAI)", "KI-Assistent (Claude / OpenAI)", "Asistente de IA (Claude / OpenAI)", "Assistant IA (Claude / OpenAI)", "Assistente de IA (Claude / OpenAI)"),
             ("Shortcut_TogglePreview", "Preview panel", "미리보기 패널", "プレビューパネル", "预览面板", "預覽面板", "Vorschaubereich", "Panel de vista previa", "Panneau d'aperçu", "Painel de visualização"),
             ("Shortcut_EqualizeColumns", "Equalize columns", "컬럼 너비 동등화", "列幅を均等化", "均分列宽", "平均欄寬", "Spaltenbreite angleichen", "Igualar columnas", "Égaliser les colonnes", "Igualar colunas"),
             ("Shortcut_AutoFitColumns", "Auto-fit columns", "컬럼 자동 맞춤", "列幅を自動調整", "自动适应列宽", "自動調整欄寬", "Spaltenbreite automatisch anpassen", "Autoajustar columnas", "Ajuster automatiquement les colonnes", "Ajustar colunas automaticamente"),

@@ -254,6 +254,7 @@ public class KeyBindingService
             ["span.view.list"]             = ["Ctrl+3"],
             ["span.view.icon"]             = ["Ctrl+4"],
             ["span.view.splitView"]        = ["Ctrl+Shift+E"],
+            ["span.tools.assistant"]       = ["Ctrl+Shift+K"],
             ["span.view.preview"]          = ["Ctrl+Shift+P"],
             ["span.view.equalizeColumns"]  = ["Ctrl+Shift+Plus"],
             ["span.view.autoFitColumns"]   = ["Ctrl+Shift+Minus"],

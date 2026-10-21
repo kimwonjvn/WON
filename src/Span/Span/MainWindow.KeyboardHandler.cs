@@ -1013,6 +1013,9 @@ namespace Span
                     settings.SidebarShowNetwork = !settings.SidebarShowNetwork;
                     ShowSettingToast("Settings_SidebarShowNetwork", settings.SidebarShowNetwork);
                     return true;
+                case ShortcutCommands.ToolsAssistant:
+                    _ = ShowAssistantDialogAsync();
+                    return true;
                 case ShortcutCommands.SettingsAddressBar:
                     ViewModel.IsAddressBarPeek = false;
                     ViewModel.IsAddressBarShown = !ViewModel.IsAddressBarShown;
