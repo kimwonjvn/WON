@@ -41,7 +41,7 @@ namespace Span
         private const string AsstSkillsEnabledKey = "AssistantSkillsEnabled";
         private const double AsstPanelWidth = 420;
 
-        private static readonly HttpClient AssistantHttp = new() { Timeout = TimeSpan.FromSeconds(120) };
+        private static readonly HttpClient AssistantHttp = new() { Timeout = TimeSpan.FromSeconds(300) };
 
         private AssistantAgent? _asstAgent;
         private CancellationTokenSource? _asstCts;
@@ -186,7 +186,7 @@ namespace Span
         private string AsstProvider()
         {
             var p = AsstSettings.Get(AsstProviderKey, "Claude");
-            return p == "OpenAI" ? "OpenAI" : "Claude";
+            return p is "OpenAI" or "Local" ? p : "Claude";
         }
 
         private string AsstModel(string provider)
@@ -196,7 +196,12 @@ namespace Span
         }
 
         private string AsstBaseUrl(string provider) => AsstSettings.Get(AsstBaseUrlKey + "." + provider, "");
-        private static string AsstDefaultBase(string provider) => provider == "OpenAI" ? OpenAiClient.DefaultBase : ClaudeClient.DefaultBase;
+        private static string AsstDefaultBase(string provider) => provider switch
+        {
+            "OpenAI" => OpenAiClient.DefaultBase,
+            "Local" => "http://localhost:11434",
+            _ => ClaudeClient.DefaultBase,
+        };
 
         private string? AsstCurrentFolder()
         {
@@ -213,7 +218,7 @@ namespace Span
             var p = AsstProvider();
             var model = AsstModel(p);
             AssistantModelText.Text = AssistantModelCatalog.LabelFor(p, model);
-            ToolTipService.SetToolTip(AssistantModelButton, $"{p} · {model}");
+            ToolTipService.SetToolTip(AssistantModelButton, $"{AssistantModelCatalog.DisplayName(p)} · {model}");
 
             int enabledSkills = AsstSkills.List().Count(s => AsstEnabledSkillIds().Contains(s.Id));
             AssistantSkillsText.Text = AsT("Skills", "스킬") + (enabledSkills > 0 ? $" · {enabledSkills}" : "");
@@ -235,7 +240,7 @@ namespace Span
                 reason = AsT("The assistant is turned off. Turn it on below.", "어시스턴트가 꺼져 있습니다. 아래에서 켜 주세요.");
                 return false;
             }
-            if (AssistantCredentialStore.Load(p) == null)
+            if (p != "Local" && AssistantCredentialStore.Load(p) == null)
             {
                 reason = AsT($"No {p} API key is saved yet.", $"{p} API 키가 아직 저장되지 않았습니다.");
                 return false;
@@ -251,14 +256,20 @@ namespace Span
                 var p = AsstProvider();
                 bool hasKey = AssistantCredentialStore.Load(p) != null;
                 AssistantEnableToggle.IsOn = AsstSettings.Get(AsstEnabledKey, false);
+                bool isLocal = p == "Local";
+                AssistantKeyBox.Visibility = AssistantKeySaveButton.Visibility = AssistantKeyClearButton.Visibility = isLocal ? Visibility.Collapsed : Visibility.Visible;
                 AssistantKeyBox.Header = AsT($"{p} API key", $"{p} API 키");
                 AssistantKeyBox.PlaceholderText = hasKey ? AsT("(saved — paste a new key to replace)", "(저장됨 — 바꾸려면 새 키를 붙여넣기)") : "sk-…";
                 AssistantKeyBox.Password = string.Empty;
                 AssistantKeyClearButton.IsEnabled = hasKey;
-                AssistantBaseUrlBox.Header = AsT("Base URL (optional, https only)", "Base URL (선택, https만)");
+                AssistantBaseUrlBox.Header = isLocal
+                    ? AsT("Local server URL (this PC only)", "로컬 서버 주소 (이 PC만 가능)")
+                    : AsT("Base URL (optional, https only)", "Base URL (선택, https만)");
                 AssistantBaseUrlBox.PlaceholderText = AsstDefaultBase(p);
                 AssistantBaseUrlBox.Text = AsstBaseUrl(p);
-                AssistantSettingsStatus.Text = string.Empty;
+                AssistantSettingsStatus.Text = isLocal
+                    ? AsT("Local model: no API key needed. Run Ollama on this PC; nothing leaves it.", "로컬 모델: API 키가 필요 없습니다. 이 PC에서 Ollama를 실행하며 내용이 PC 밖으로 나가지 않습니다.")
+                    : string.Empty;
             }
             finally { _asstUiLoading = false; }
         }
@@ -328,7 +339,7 @@ namespace Span
             var currentModel = AsstModel(current);
             foreach (var provider in AssistantModelCatalog.Providers)
             {
-                var sub = new MenuFlyoutSubItem { Text = provider };
+                var sub = new MenuFlyoutSubItem { Text = AssistantModelCatalog.DisplayName(provider) };
                 bool known = false;
                 foreach (var (id, label) in AssistantModelCatalog.For(provider))
                 {
@@ -556,10 +567,15 @@ namespace Span
             client = null; error = string.Empty;
             if (!IsAssistantReady(out error)) return false;
             var p = AsstProvider();
-            var key = AssistantCredentialStore.Load(p)!;
+            var key = p == "Local" ? string.Empty : AssistantCredentialStore.Load(p)!;
             if (!LlmEndpoint.TryResolveBase(AsstBaseUrl(p), AsstDefaultBase(p), out var baseUri, out var urlErr)) { error = urlErr; return false; }
+            if (p == "Local" && !baseUri.IsLoopback)
+            {
+                error = AsT("The local model address must be on this PC (localhost).", "로컬 모델 주소는 이 PC(localhost)여야 합니다.");
+                return false;
+            }
             var model = AsstModel(p);
-            client = p == "OpenAI"
+            client = p is "OpenAI" or "Local"
                 ? new OpenAiClient(AssistantHttp, key, model, baseUri)
                 : new ClaudeClient(AssistantHttp, key, model, baseUri);
             return true;
@@ -889,7 +905,9 @@ namespace Span
             }
             AssistantChipsScroll.Visibility = _asstAttachments.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             if (_asstAttachments.Count > 0)
-                ShowAttachNote(AsT($"The contents of attached files are sent to {AsstProvider()}.", $"첨부한 파일의 내용이 {AsstProvider()}(으)로 전송됩니다."), isError: false);
+                ShowAttachNote(AsstProvider() == "Local"
+                    ? AsT("Attached files stay on this PC (local model).", "첨부한 파일은 이 PC 안의 로컬 모델에만 전달됩니다.")
+                    : AsT($"The contents of attached files are sent to {AsstProvider()}.", $"첨부한 파일의 내용이 {AsstProvider()}(으)로 전송됩니다."), isError: false);
             else
                 AssistantAttachNote.Visibility = Visibility.Collapsed;
         }

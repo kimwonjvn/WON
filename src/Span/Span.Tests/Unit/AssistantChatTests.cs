@@ -305,8 +305,10 @@ public class LlmAttachmentRequestTests
     private sealed class FakeHandler : HttpMessageHandler
     {
         public string? Body { get; private set; }
+        public bool HadAuthorization { get; private set; }
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
+            HadAuthorization = request.Headers.Authorization != null;
             Body = request.Content == null ? null : await request.Content.ReadAsStringAsync(ct);
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("""{"content":[{"type":"text","text":"ok"}],"choices":[{"message":{"content":"ok"}}]}""", Encoding.UTF8, "application/json") };
         }
@@ -356,6 +358,29 @@ public class LlmAttachmentRequestTests
         StringAssert.StartsWith(content[0].GetProperty("image_url").GetProperty("url").GetString(), "data:image/png;base64,");
         Assert.AreEqual("text", content[1].GetProperty("type").GetString());
         Assert.AreEqual("what is this?", content[2].GetProperty("text").GetString());
+    }
+
+    [TestMethod]
+    public async Task OpenAi_client_sends_no_authorization_header_without_a_key()
+    {
+        var handler = new FakeHandler();
+        var client = new OpenAiClient(new HttpClient(handler), "", "qwen3.5:9b", new Uri("http://localhost:11434"));
+        await client.SendAsync("s", new List<LlmMessage> { new() { Role = LlmRole.User, Text = "hi" } }, AssistantToolCatalog.All, CancellationToken.None);
+        Assert.IsFalse(handler.HadAuthorization);
+
+        var keyed = new FakeHandler();
+        await new OpenAiClient(new HttpClient(keyed), "K", "gpt-4o", new Uri("https://api.openai.com"))
+            .SendAsync("s", new List<LlmMessage> { new() { Role = LlmRole.User, Text = "hi" } }, AssistantToolCatalog.All, CancellationToken.None);
+        Assert.IsTrue(keyed.HadAuthorization);
+    }
+
+    [TestMethod]
+    public void Local_provider_has_models_and_default()
+    {
+        CollectionAssert.Contains(AssistantModelCatalog.Providers, "Local");
+        Assert.AreEqual("qwen3.5:9b", AssistantModelCatalog.DefaultModel("Local"));
+        Assert.IsTrue(AssistantModelCatalog.For("Local").Count > 0);
+        Assert.AreEqual("Local (Ollama)", AssistantModelCatalog.DisplayName("Local"));
     }
 
     [TestMethod]

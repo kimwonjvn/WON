@@ -171,25 +171,42 @@ public sealed class AssistantSkillStore
 
 public static class AssistantModelCatalog
 {
-    public static readonly string[] Providers = { "Claude", "OpenAI" };
+    public static readonly string[] Providers = { "Claude", "OpenAI", "Local" };
 
-    public static IReadOnlyList<(string Id, string Label)> For(string provider) => provider == "OpenAI"
-        ? new[]
+    /// <summary>Local = 이 PC 에서 도는 Ollama 등 OpenAI 호환 서버. 키 없이 loopback 주소만 허용.</summary>
+    public static string DisplayName(string provider) => provider == "Local" ? "Local (Ollama)" : provider;
+
+    public static IReadOnlyList<(string Id, string Label)> For(string provider) => provider switch
+    {
+        "OpenAI" => new[]
         {
             ("gpt-4o", "GPT-4o"),
             ("gpt-4o-mini", "GPT-4o mini"),
             ("gpt-4.1", "GPT-4.1"),
             ("gpt-4.1-mini", "GPT-4.1 mini"),
-        }
-        : new[]
+        },
+        "Local" => new[]
+        {
+            ("qwen3.5:9b", "Qwen 3.5 9B"),
+            ("gemma4:e4b", "Gemma 4 E4B"),
+            ("qwen3.8:27b", "Qwen 3.8 27B"),
+            ("gpt-oss:20b", "gpt-oss 20B"),
+        },
+        _ => new[]
         {
             ("claude-fable-5-1", "Fable 5.1"),
             ("claude-opus-5-5", "Opus 5.5"),
             ("claude-sonnet-5-5", "Sonnet 5.5"),
             ("claude-haiku-5-5", "Haiku 5.5"),
-        };
+        },
+    };
 
-    public static string DefaultModel(string provider) => provider == "OpenAI" ? "gpt-4o" : "claude-sonnet-5-5";
+    public static string DefaultModel(string provider) => provider switch
+    {
+        "OpenAI" => "gpt-4o",
+        "Local" => "qwen3.5:9b",
+        _ => "claude-sonnet-5-5",
+    };
 
     /// <summary>목록에 있으면 라벨, 없으면 모델 ID 그대로.</summary>
     public static string LabelFor(string provider, string modelId)

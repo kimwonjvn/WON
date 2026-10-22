@@ -287,7 +287,9 @@ public sealed class OpenAiClient : ILlmClient
         var body = BuildRequest(system, messages, tools);
         using var doc = await LlmHttp.PostJsonAsync(_http, _url, body, r =>
         {
-            r.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _apiKey);
+            // 로컬 서버(Ollama 등)는 키가 없다 — 빈 Authorization 헤더는 보내지 않는다.
+            if (_apiKey.Length > 0)
+                r.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _apiKey);
         }, ct).ConfigureAwait(false);
         return ParseResponse(doc.RootElement);
     }
