@@ -47,6 +47,12 @@ Select one or more files and use the context menu (*Convert to PDF*, *Merge into
 
 Nothing is uploaded anywhere: conversion runs on your PC. Office / Hancom / LibreOffice are **not bundled** — WON uses whatever is installed. Files from untrusted sources are opened by those programs just like double-clicking them.
 
+## Install / release
+
+Users download **one file**, `WON_Setup_<version>_x64.exe`, from the Releases page and double-click it. It embeds the signed MSIX, checks that the package is signed by the expected WON certificate, asks Windows for administrator approval **once** to trust that self-signed certificate (the only elevated step; the app itself is installed for the current user), installs WON, and can start it. If WON is running it asks before closing it. A log is written to `%TEMP%\WON-setup.log`. It needs nothing else installed (.NET Framework 4.7.2 ships with Windows 10 1809+/11). Managed PCs without admin rights, or with sideloading disabled, will still refuse.
+
+Maintainers: build the signed MSIX (below), then run `toolsuild-installer.ps1 -DistDir <dist> -SigningDir <keys>`; it produces and signs `WON_Setup_<version>_x64.exe` (source in `src/WonSetup`). Attach that exe as the main release asset; the sideload zip stays available for administrators.
+
 ## Build
 
 Requires Windows 10 1809+ and the .NET 8 SDK.

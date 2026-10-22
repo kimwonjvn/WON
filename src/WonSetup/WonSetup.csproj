@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    WON_Setup.exe — one-file installer for the signed MSIX.
+    .NET Framework 4.7.2 ships with Windows 10 1809+/11, so users need nothing else installed.
+    Build with tools\build-installer.ps1, which passes the payload and the expected certificate thumbprint:
+      -p:PayloadMsix=...  -p:PayloadCer=...  -p:CertThumbprint=...  -p:AppVersion=x.y.z
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net472</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AssemblyName>WON_Setup</AssemblyName>
+    <RootNamespace>WonSetup</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\Span\Span\Assets\app.ico</ApplicationIcon>
+    <AppVersion Condition="'$(AppVersion)' == ''">0.0.0</AppVersion>
+    <Version>$(AppVersion)</Version>
+    <Company>WON</Company>
+    <Product>WON</Product>
+    <Description>WON installer</Description>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\Span\Span\Assets\app.ico" LogicalName="app.ico" />
+    <EmbeddedResource Include="$(PayloadMsix)" LogicalName="payload.msix" Condition="'$(PayloadMsix)' != ''" />
+    <EmbeddedResource Include="$(PayloadCer)" LogicalName="payload.cer" Condition="'$(PayloadCer)' != ''" />
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>CertThumbprint</_Parameter1>
+      <_Parameter2>$(CertThumbprint)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <Target Name="RequirePayload" BeforeTargets="CoreCompile">
+    <Error Condition="'$(PayloadMsix)' == '' Or '$(PayloadCer)' == '' Or '$(CertThumbprint)' == ''"
+           Text="Pass -p:PayloadMsix, -p:PayloadCer and -p:CertThumbprint (use tools\build-installer.ps1)." />
+  </Target>
+
+</Project>
