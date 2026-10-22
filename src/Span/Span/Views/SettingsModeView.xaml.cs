@@ -247,6 +247,7 @@ public sealed partial class SettingsModeView : UserControl
             SidebarShowNetworkToggle.IsOn = _settings.SidebarShowNetwork;
             SidebarShowServersToggle.IsOn = _settings.SidebarShowServers;
             SidebarShowLocalServersToggle.IsOn = _settings.SidebarShowLocalServers;
+            SidebarShowRecentDocsToggle.IsOn = _settings.SidebarShowRecentDocs;
             SidebarShowRecycleBinToggle.IsOn = _settings.SidebarShowRecycleBin;
 
             // Browsing
@@ -801,6 +802,7 @@ public sealed partial class SettingsModeView : UserControl
             SidebarShowNetworkLabel.Text = _loc.Get("Settings_Network") ?? "Network";
             SidebarShowServersLabel.Text = _loc.Get("Settings_Servers") ?? "Servers";
             SidebarShowLocalServersLabel.Text = _loc.Get("Settings_LocalServers") ?? "Local Servers";
+            SidebarShowRecentDocsLabel.Text = _loc.Get("Settings_RecentDocs") ?? "Recent documents";
             SidebarShowRecycleBinLabel.Text = _loc.Get("Settings_RecycleBin") ?? "Recycle Bin";
 
             // Tools
@@ -1995,6 +1997,7 @@ public sealed partial class SettingsModeView : UserControl
         _settings.SidebarShowNetwork = SidebarShowNetworkToggle.IsOn;
         _settings.SidebarShowServers = SidebarShowServersToggle.IsOn;
         _settings.SidebarShowLocalServers = SidebarShowLocalServersToggle.IsOn;
+        _settings.SidebarShowRecentDocs = SidebarShowRecentDocsToggle.IsOn;
         _settings.SidebarShowRecycleBin = SidebarShowRecycleBinToggle.IsOn;
 
         // 모든 열린 창에 즉시 적용

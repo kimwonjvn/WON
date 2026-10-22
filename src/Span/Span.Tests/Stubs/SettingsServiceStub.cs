@@ -63,6 +63,7 @@ public class SettingsServiceStub : ISettingsService
     public bool SidebarShowNetwork { get; set; } = true;
     public bool SidebarShowServers { get; set; } = true;
     public bool SidebarShowLocalServers { get; set; } = true;
+    public bool SidebarShowRecentDocs { get; set; } = true;
     public bool SidebarShowRecycleBin { get; set; } = true;
 
     // ── IDeveloperSettings ──────────────────────────

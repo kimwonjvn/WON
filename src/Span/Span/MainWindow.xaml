@@ -673,6 +673,32 @@
                             </ItemsControl>
                         </StackPanel>
 
+                        <!-- ═══════ Section 4b: 최근 문서 (엑셀 / 파워포인트 / 문서) ═══════ -->
+                        <StackPanel x:Name="SidebarRecentDocsSection">
+                            <Rectangle Height="1" Fill="{ThemeResource SpanBorderSubtleBrush}" Margin="12,12"/>
+                            <Grid Height="24" Padding="12,0" Background="Transparent"
+                                  Tapped="OnSidebarSectionHeaderTapped" Tag="RecentDocs"
+                                  RightTapped="OnSidebarSectionHeaderRightTapped"
+                                  PointerEntered="OnSidebarItemPointerEntered" PointerExited="OnSidebarItemPointerExited" PointerPressed="OnSidebarItemPointerPressed" PointerReleased="OnSidebarItemPointerReleased">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <FontIcon Glyph="&#xE70D;" FontSize="10" Margin="0,0,6,0"
+                                          VerticalAlignment="Center"
+                                          RenderTransformOrigin="0.5,0.5">
+                                    <FontIcon.RenderTransform>
+                                        <RotateTransform x:Name="RecentDocsChevron" Angle="0"/>
+                                    </FontIcon.RenderTransform>
+                                </FontIcon>
+                                <TextBlock x:Name="SidebarRecentDocsText" Grid.Column="1" Text="최근 문서"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource SpanTextTertiaryBrush}" FontWeight="SemiBold"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
+                            <StackPanel x:Name="SidebarRecentDocsRows"/>
+                        </StackPanel>
+
                         <!-- ═══════ Section 5a: 로컬 서버 (주소창에 입력한 \\서버) ═══════ -->
                         <StackPanel x:Name="SidebarLocalServersSection">
                             <Rectangle Height="1" Fill="{ThemeResource SpanBorderSubtleBrush}" Margin="12,12"/>
@@ -1807,69 +1833,85 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Header -->
-                    <Grid Grid.Row="0" Padding="16,10,8,10" BorderBrush="{ThemeResource SpanBorderSubtleBrush}" BorderThickness="0,0,0,1">
+                    <!-- Header: quiet, no divider line -->
+                    <Grid Grid.Row="0" Padding="18,14,10,8">
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <StackPanel VerticalAlignment="Center">
+                        <Image x:Name="AssistantLogo" Width="26" Height="26" Margin="0,0,10,0" VerticalAlignment="Center"
+                               Source="ms-appx:///Assets/Square44x44Logo.targetsize-48_altform-unplated.png"/>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock x:Name="AssistantTitle" Text="WON Assistant" FontSize="14" FontWeight="SemiBold"/>
-                            <TextBlock x:Name="AssistantSubtitle" FontSize="11" Opacity="0.6" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock x:Name="AssistantSubtitle" FontSize="11" Opacity="0.55" TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2">
-                            <Button x:Name="AssistantNewChatButton" Style="{StaticResource UnifiedButtonStyle}" Click="OnAssistantNewChatClick">
-                                <FontIcon Glyph="&#xE710;" FontSize="14"/>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="0">
+                            <Button x:Name="AssistantHistoryButton" Style="{StaticResource UnifiedButtonStyle}" CornerRadius="10" Click="OnAssistantHistoryClick">
+                                <FontIcon Glyph="&#xE81C;" FontSize="14"/>
                             </Button>
-                            <Button x:Name="AssistantSettingsButton" Style="{StaticResource UnifiedButtonStyle}" Click="OnAssistantSettingsClick">
+                            <Button x:Name="AssistantNewChatButton" Style="{StaticResource UnifiedButtonStyle}" CornerRadius="10" Click="OnAssistantNewChatClick">
+                                <FontIcon Glyph="&#xE70F;" FontSize="14"/>
+                            </Button>
+                            <Button x:Name="AssistantSettingsButton" Style="{StaticResource UnifiedButtonStyle}" CornerRadius="10" Click="OnAssistantSettingsClick">
                                 <FontIcon Glyph="&#xE713;" FontSize="14"/>
                             </Button>
-                            <Button x:Name="AssistantCloseButton" Style="{StaticResource UnifiedButtonStyle}" Click="OnAssistantCloseClick">
+                            <Button x:Name="AssistantCloseButton" Style="{StaticResource UnifiedButtonStyle}" CornerRadius="10" Click="OnAssistantCloseClick">
                                 <FontIcon Glyph="&#xE711;" FontSize="12"/>
                             </Button>
                         </StackPanel>
                     </Grid>
 
-                    <!-- Body: settings (collapsible) + conversation -->
+                    <!-- Body: settings card (collapsible) + conversation -->
                     <Grid Grid.Row="1">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <Border x:Name="AssistantSettingsArea" Visibility="Collapsed" Padding="16,12"
-                                BorderBrush="{ThemeResource SpanBorderSubtleBrush}" BorderThickness="0,0,0,1">
+                        <Border x:Name="AssistantSettingsArea" Visibility="Collapsed" Margin="14,2,14,8" Padding="14,12" CornerRadius="14"
+                                Background="{ThemeResource SpanBgLayer2Brush}">
                             <StackPanel Spacing="8">
                                 <ToggleSwitch x:Name="AssistantEnableToggle" OnContent="" OffContent="" Toggled="OnAssistantEnableToggled"/>
-                                <TextBlock x:Name="AssistantPrivacyText" FontSize="12" Opacity="0.75" TextWrapping="Wrap"/>
-                                <PasswordBox x:Name="AssistantKeyBox"/>
+                                <ToggleSwitch x:Name="AssistantHistoryToggle" OnContent="" OffContent="" Toggled="OnAssistantHistoryToggled"/>
+                                <TextBlock x:Name="AssistantPrivacyText" FontSize="12" Opacity="0.7" TextWrapping="Wrap"/>
+                                <PasswordBox x:Name="AssistantKeyBox" CornerRadius="10"/>
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <Button x:Name="AssistantKeySaveButton" Click="OnAssistantKeySaveClick"/>
-                                    <Button x:Name="AssistantKeyClearButton" Click="OnAssistantKeyClearClick"/>
+                                    <Button x:Name="AssistantKeySaveButton" CornerRadius="10" Click="OnAssistantKeySaveClick"/>
+                                    <Button x:Name="AssistantKeyClearButton" CornerRadius="10" Click="OnAssistantKeyClearClick"/>
                                 </StackPanel>
-                                <TextBox x:Name="AssistantBaseUrlBox" LostFocus="OnAssistantBaseUrlLostFocus"/>
-                                <TextBlock x:Name="AssistantSettingsStatus" FontSize="12" TextWrapping="Wrap"/>
+                                <TextBox x:Name="AssistantBaseUrlBox" CornerRadius="10" LostFocus="OnAssistantBaseUrlLostFocus"/>
+                                <TextBlock x:Name="AssistantSettingsStatus" FontSize="12" Opacity="0.8" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
 
                         <ScrollViewer x:Name="AssistantScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                            <StackPanel x:Name="AssistantMessages" Padding="16,12,16,8" Spacing="16"/>
+                            <StackPanel x:Name="AssistantMessages" Padding="18,6,18,12" Spacing="14"/>
                         </ScrollViewer>
                     </Grid>
 
-                    <!-- Composer -->
-                    <Border Grid.Row="2" Margin="12,4,12,12" Padding="10,8,8,8" CornerRadius="14"
+                    <!-- Composer: floating rounded field -->
+                    <Border Grid.Row="2" Margin="14,4,14,14" Padding="14,8,8,8" CornerRadius="22"
                             Background="{ThemeResource SpanBgLayer2Brush}"
                             BorderBrush="{ThemeResource SpanBorderSubtleBrush}" BorderThickness="1">
-                        <StackPanel Spacing="6">
+                        <StackPanel Spacing="4">
                             <ScrollViewer x:Name="AssistantChipsScroll" Visibility="Collapsed"
                                           HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                                <StackPanel x:Name="AssistantChips" Orientation="Horizontal" Spacing="6" Padding="0,0,0,4"/>
+                                <StackPanel x:Name="AssistantChips" Orientation="Horizontal" Spacing="6" Padding="0,2,0,6"/>
                             </ScrollViewer>
                             <TextBlock x:Name="AssistantAttachNote" Visibility="Collapsed" FontSize="11" Opacity="0.7" TextWrapping="Wrap"/>
-                            <TextBox x:Name="AssistantInput" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="44" MaxHeight="140"
-                                     BorderThickness="0" Background="Transparent" Padding="2,4"
-                                     PreviewKeyDown="OnAssistantInputKeyDown" Paste="OnAssistantInputPaste"/>
+                            <TextBox x:Name="AssistantInput" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="40" MaxHeight="140"
+                                     BorderThickness="0" Background="Transparent" Padding="0,8,0,4" FontSize="14"
+                                     PreviewKeyDown="OnAssistantInputKeyDown" Paste="OnAssistantInputPaste">
+                                <TextBox.Resources>
+                                    <!-- no accent underline / grey fill inside the rounded composer -->
+                                    <Thickness x:Key="TextControlBorderThemeThicknessFocused">0</Thickness>
+                                    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="Transparent"/>
+                                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="Transparent"/>
+                                    <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="Transparent"/>
+                                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="Transparent"/>
+                                </TextBox.Resources>
+                            </TextBox>
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -1878,7 +1920,7 @@
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <Button x:Name="AssistantAttachButton" Grid.Column="0" Style="{StaticResource UnifiedButtonStyle}">
+                                <Button x:Name="AssistantAttachButton" Grid.Column="0" Style="{StaticResource UnifiedButtonStyle}" CornerRadius="14">
                                     <FontIcon Glyph="&#xE723;" FontSize="15"/>
                                     <Button.Flyout>
                                         <MenuFlyout Placement="TopEdgeAlignedLeft">
@@ -1891,16 +1933,16 @@
                                         </MenuFlyout>
                                     </Button.Flyout>
                                 </Button>
-                                <Button x:Name="AssistantSkillsButton" Grid.Column="1" Style="{StaticResource UnifiedButtonStyle}" Click="OnAssistantSkillsClick">
+                                <Button x:Name="AssistantSkillsButton" Grid.Column="1" Style="{StaticResource UnifiedButtonStyle}" CornerRadius="14" Click="OnAssistantSkillsClick">
                                     <StackPanel Orientation="Horizontal" Spacing="5">
                                         <FontIcon Glyph="&#xE9D9;" FontSize="14"/>
                                         <TextBlock x:Name="AssistantSkillsText" FontSize="12" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
-                                <Button x:Name="AssistantModelButton" Grid.Column="3" Style="{StaticResource UnifiedButtonStyle}">
+                                <Button x:Name="AssistantModelButton" Grid.Column="3" Style="{StaticResource UnifiedButtonStyle}" CornerRadius="14">
                                     <StackPanel Orientation="Horizontal" Spacing="5">
-                                        <TextBlock x:Name="AssistantModelText" FontSize="12" VerticalAlignment="Center"/>
-                                        <FontIcon Glyph="&#xE70D;" FontSize="9"/>
+                                        <TextBlock x:Name="AssistantModelText" FontSize="12" Opacity="0.8" VerticalAlignment="Center"/>
+                                        <FontIcon Glyph="&#xE70D;" FontSize="9" Opacity="0.7"/>
                                     </StackPanel>
                                 </Button>
                                 <Button x:Name="AssistantSendButton" Grid.Column="4" Margin="6,0,0,0" Width="32" Height="32" Padding="0" CornerRadius="16"

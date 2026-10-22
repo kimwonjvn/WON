@@ -54,6 +54,7 @@ namespace Span.Services
         bool SidebarShowNetwork { get; set; }
         bool SidebarShowServers { get; set; }
         bool SidebarShowLocalServers { get; set; }
+        bool SidebarShowRecentDocs { get; set; }
         bool SidebarShowRecycleBin { get; set; }
     }
 

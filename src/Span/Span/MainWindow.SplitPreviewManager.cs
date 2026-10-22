@@ -294,6 +294,8 @@ namespace Span
             SidebarNetworkText.Text = _loc.Get("Network");
             SidebarServersText.Text = _loc.Get("Servers");
             SidebarLocalServersText.Text = _loc.Get("LocalServers");
+            SidebarRecentDocsText.Text = _loc.Get("Settings_RecentDocs");
+            BuildRecentDocsRows();
             ToolTipService.SetToolTip(SidebarServersAddButton, _loc.Get("ConnectToServer").TrimEnd('.', '…'));
             ToolTipService.SetToolTip(SidebarLocalServersAddButton, _loc.Get("LocalServer_Add"));
             RecycleBinLabel.Text = _loc.Get("RecycleBin");

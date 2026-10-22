@@ -1696,6 +1696,13 @@
                                     <Rectangle Height="1" Fill="{ThemeResource SpanBorderSubtleBrush}" Margin="48,0,0,0" />
                                     <Grid Margin="48,0,0,0">
                                         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <FontIcon Grid.Column="0" Glyph="&#xE81C;" FontSize="14" Foreground="{ThemeResource SpanAccentBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="SidebarShowRecentDocsLabel" Grid.Column="1" Text="Recent documents" Style="{StaticResource ToggleRowLabel}" />
+                                        <ToggleSwitch x:Name="SidebarShowRecentDocsToggle" Grid.Column="2" IsOn="True" OnContent="" OffContent="" Toggled="OnSidebarSectionToggled"/>
+                                    </Grid>
+                                    <Rectangle Height="1" Fill="{ThemeResource SpanBorderSubtleBrush}" Margin="48,0,0,0" />
+                                    <Grid Margin="48,0,0,0">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                         <FontIcon Grid.Column="0" Glyph="&#xE74D;" FontSize="14" Foreground="{ThemeResource SpanAccentBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                         <TextBlock x:Name="SidebarShowRecycleBinLabel" Grid.Column="1" Text="Recycle Bin" Style="{StaticResource ToggleRowLabel}" />
                                         <ToggleSwitch x:Name="SidebarShowRecycleBinToggle" Grid.Column="2" IsOn="True" OnContent="" OffContent="" Toggled="OnSidebarSectionToggled"/>
@@ -2194,7 +2201,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
-                                        <FontIcon Glyph="&#xE80F;" FontSize="40" Foreground="{ThemeResource SpanAccentBrush}" />
+                                        <Image Width="56" Height="56" Source="ms-appx:///Assets/Square44x44Logo.targetsize-256_altform-unplated.png" />
                                         <StackPanel Spacing="2">
                                             <TextBlock Text="WON" FontSize="22" FontWeight="Bold" Foreground="{ThemeResource SpanTextPrimaryBrush}" />
                                             <TextBlock x:Name="VersionLabel" FontSize="12" Foreground="{ThemeResource SpanTextSecondaryBrush}" />

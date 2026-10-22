@@ -59,6 +59,29 @@ public sealed class AssistantAgent
         _plannedFolders.Clear();
     }
 
+    /// <summary>
+    /// 저장된 대화(사용자/어시스턴트 글만)로 기록을 다시 채워 이어서 대화할 수 있게 한다.
+    /// 도구 호출 결과는 저장하지 않으므로 복원되지 않는다. 역할이 번갈아 가도록 맞추고, 끝이 사용자 글이면 버린다.
+    /// </summary>
+    public void RestoreHistory(IEnumerable<(bool IsUser, string Text)> turns)
+    {
+        ResetConversation();
+        foreach (var (isUser, text) in turns)
+        {
+            if (string.IsNullOrWhiteSpace(text)) continue;
+            var role = isUser ? LlmRole.User : LlmRole.Assistant;
+            if (_history.Count == 0 && role != LlmRole.User) continue;
+            if (_history.Count > 0 && _history[^1].Role == role)
+            {
+                _history[^1] = new LlmMessage { Role = role, Text = _history[^1].Text + "\n\n" + text };
+                continue;
+            }
+            _history.Add(new LlmMessage { Role = role, Text = text });
+        }
+        if (_history.Count > 0 && _history[^1].Role == LlmRole.User) _history.RemoveAt(_history.Count - 1);
+        TrimHistory();
+    }
+
     public string BuildSystemPrompt() =>
         "You are the file-management assistant inside WON, a Windows file explorer. " +
         "Help the user explore and organise folders using the provided tools.\n" +

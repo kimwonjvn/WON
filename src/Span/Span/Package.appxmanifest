@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
@@ -12,7 +12,7 @@
   <Identity
     Name="WON.FileExplorer"
     Publisher="CN=WON"
-    Version="2.3.2.0" />
+    Version="2.4.1.0" />
 
   <mp:PhoneIdentity PhoneProductId="8ee278b6-c527-4e2c-b8ae-9ac71fe2ad4a" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 

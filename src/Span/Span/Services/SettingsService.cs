@@ -303,6 +303,7 @@ public class SettingsService : ISettingsService
     public bool SidebarShowNetwork { get => Get("SidebarShowNetwork", true); set => Set("SidebarShowNetwork", value); }
     public bool SidebarShowServers { get => Get("SidebarShowServers", true); set => Set("SidebarShowServers", value); }
     public bool SidebarShowLocalServers { get => Get("SidebarShowLocalServers", true); set => Set("SidebarShowLocalServers", value); }
+    public bool SidebarShowRecentDocs { get => Get("SidebarShowRecentDocs", true); set => Set("SidebarShowRecentDocs", value); }
     public bool SidebarShowRecycleBin { get => Get("SidebarShowRecycleBin", true); set => Set("SidebarShowRecycleBin", value); }
 
     public bool ShowDeveloperMenu

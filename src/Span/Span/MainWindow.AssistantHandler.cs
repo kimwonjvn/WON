@@ -54,6 +54,13 @@ namespace Span
         private TextBlock? _asstThinkingText;
         private AssistantSkillStore? _asstSkillStore;
         private readonly List<LlmAttachment> _asstAttachments = new();
+        private AssistantChatStore? _asstChatStore;
+        private StoredChat? _asstChat;
+        private List<(bool IsUser, string Text)>? _asstRestoreTurns;
+        private const string AsstHistoryKey = "AssistantHistoryEnabled";
+        private bool AsstHistoryEnabled => AsstSettings.Get(AsstHistoryKey, true);
+        private AssistantChatStore AsstChats => _asstChatStore ??= new AssistantChatStore(System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WON", "assistant-chats"));
 
         private SettingsService AsstSettings => App.Current.Services.GetRequiredService<SettingsService>();
         private bool AsstKo => _loc.Language.StartsWith("ko", StringComparison.OrdinalIgnoreCase);
@@ -158,7 +165,7 @@ namespace Span
             modelFlyout.Opening += (_, _) => RebuildAssistantModelMenu(modelFlyout);
             AssistantModelButton.Flyout = modelFlyout;
 
-            ShowAssistantEmptyState();
+            ResumeLastAssistantChat();
         }
 
         private void ApplyAssistantTexts()
@@ -167,6 +174,8 @@ namespace Span
             ToolTipService.SetToolTip(AssistantNewChatButton, AsT("New chat", "새 대화"));
             ToolTipService.SetToolTip(AssistantSettingsButton, AsT("Assistant settings", "어시스턴트 설정"));
             ToolTipService.SetToolTip(AssistantCloseButton, AsT("Close", "닫기"));
+            ToolTipService.SetToolTip(AssistantHistoryButton, AsT("Chat history", "대화 기록"));
+            AssistantHistoryToggle.Header = AsT("Save chat history on this PC", "이 PC에 대화 기록 저장");
             ToolTipService.SetToolTip(AssistantAttachButton, AsT("Attach file or image", "파일/이미지 첨부"));
             ToolTipService.SetToolTip(AssistantSkillsButton, AsT("Skills", "스킬"));
             ToolTipService.SetToolTip(AssistantSendButton, AsT("Send (Enter)", "보내기 (Enter)"));
@@ -256,6 +265,7 @@ namespace Span
                 var p = AsstProvider();
                 bool hasKey = AssistantCredentialStore.Load(p) != null;
                 AssistantEnableToggle.IsOn = AsstSettings.Get(AsstEnabledKey, false);
+                AssistantHistoryToggle.IsOn = AsstHistoryEnabled;
                 bool isLocal = p == "Local";
                 AssistantKeyBox.Visibility = AssistantKeySaveButton.Visibility = AssistantKeyClearButton.Visibility = isLocal ? Visibility.Collapsed : Visibility.Visible;
                 AssistantKeyBox.Header = AsT($"{p} API key", $"{p} API 키");
@@ -402,17 +412,24 @@ namespace Span
         private void ShowAssistantEmptyState()
         {
             AssistantMessages.Children.Clear();
-            var panel = new StackPanel { Spacing = 10, Margin = new Thickness(0, 40, 0, 0), Tag = "empty" };
+            var panel = new StackPanel { Spacing = 8, Margin = new Thickness(0, 24, 0, 0), Tag = "empty" };
+            panel.Children.Add(new Image
+            {
+                Width = 72, Height = 72, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 6),
+                Source = new BitmapImage(new Uri("ms-appx:///Assets/Square44x44Logo.targetsize-256_altform-unplated.png"))
+            });
             panel.Children.Add(new TextBlock
             {
                 Text = AsT("How can I help?", "무엇을 도와드릴까요?"),
-                FontSize = 20, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap
+                FontSize = 22, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap,
+                HorizontalAlignment = HorizontalAlignment.Center, TextAlignment = TextAlignment.Center
             });
             panel.Children.Add(new TextBlock
             {
                 Text = AsT("I can explore folders and propose organising changes. Nothing is changed until you approve a plan.",
                            "폴더를 살펴보고 정리 계획을 제안할 수 있어요. 계획을 승인하기 전에는 아무것도 바뀌지 않습니다."),
-                FontSize = 12, Opacity = 0.7, TextWrapping = TextWrapping.Wrap
+                FontSize = 12, Opacity = 0.6, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center,
+                Margin = new Thickness(12, 0, 12, 12)
             });
 
             var suggestions = new[]
@@ -424,7 +441,9 @@ namespace Span
             foreach (var s in suggestions)
             {
                 var text = s;
-                var btn = new Button { Content = new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, FontSize = 12 }, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left };
+                var btn = AsXaml<Button>("<Button HorizontalAlignment='Stretch' HorizontalContentAlignment='Left' CornerRadius='14' " +
+                                         "Padding='14,10' BorderThickness='0' Background='{ThemeResource SpanBgLayer2Brush}'/>");
+                btn.Content = new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, FontSize = 13 };
                 btn.Click += (_, _) => { AssistantInput.Text = text; AssistantInput.Focus(FocusState.Programmatic); AssistantInput.SelectionStart = text.Length; };
                 panel.Children.Add(btn);
             }
@@ -448,8 +467,14 @@ namespace Span
         }
 
         /// <summary>새 메시지를 아래에서 살짝 떠오르며 나타나게 한다.</summary>
-        private void AddAssistantRow(FrameworkElement row)
+        private void AddAssistantRow(FrameworkElement row, bool animate = true)
         {
+            if (!animate)
+            {
+                AssistantMessages.Children.Add(row);
+                ScrollAssistantToEnd();
+                return;
+            }
             row.Opacity = 0;
             var shift = new TranslateTransform { Y = 10 };
             row.RenderTransform = shift;
@@ -466,10 +491,10 @@ namespace Span
             ScrollAssistantToEnd();
         }
 
-        private void AddUserMessage(string text, IReadOnlyList<LlmAttachment> attachments)
+        private void AddUserMessage(string text, IReadOnlyList<LlmAttachment> attachments, bool animate = true, IReadOnlyList<string>? restoredNames = null)
         {
-            var bubble = AsXaml<Border>("<Border HorizontalAlignment='Right' MaxWidth='340' CornerRadius='14' Padding='12,8' " +
-                                        "Background='{ThemeResource SpanBgLayer2Brush}' BorderBrush='{ThemeResource SpanBorderSubtleBrush}' BorderThickness='1'/>");
+            var bubble = AsXaml<Border>("<Border HorizontalAlignment='Right' MaxWidth='320' CornerRadius='18,18,5,18' Padding='14,9' " +
+                                        "Background='{ThemeResource AccentFillColorDefaultBrush}'/>");
             var stack = new StackPanel { Spacing = 6 };
             if (attachments.Count > 0)
             {
@@ -477,39 +502,52 @@ namespace Span
                 foreach (var a in attachments) wrap.Children.Add(BuildAttachmentChip(a, removable: false));
                 stack.Children.Add(new ScrollViewer { Content = wrap, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled });
             }
-            stack.Children.Add(new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true });
+            else if (restoredNames is { Count: > 0 })
+            {
+                stack.Children.Add(AsXaml<TextBlock>("<TextBlock FontSize='11' Opacity='0.85' TextWrapping='Wrap' " +
+                                                     "Foreground='{ThemeResource TextOnAccentFillColorPrimaryBrush}'/>"));
+                ((TextBlock)stack.Children[^1]).Text = "📎 " + string.Join(", ", restoredNames);
+            }
+            var body = AsXaml<TextBlock>("<TextBlock TextWrapping='Wrap' IsTextSelectionEnabled='True' " +
+                                         "Foreground='{ThemeResource TextOnAccentFillColorPrimaryBrush}'/>");
+            body.Text = text;
+            stack.Children.Add(body);
             bubble.Child = stack;
-            AddAssistantRow(bubble);
+            AddAssistantRow(bubble, animate);
         }
 
-        private void AddAssistantMessage(string text, bool hitLimit)
+        private void AddAssistantMessage(string text, bool hitLimit, bool animate = true)
         {
+            var bubble = AsXaml<Border>("<Border HorizontalAlignment='Left' MaxWidth='360' CornerRadius='18,18,18,5' Padding='14,10' " +
+                                        "Background='{ThemeResource SpanBgLayer2Brush}'/>");
             var stack = new StackPanel { Spacing = 6 };
-            stack.Children.Add(new TextBlock { Text = "WON", FontSize = 11, Opacity = 0.55, FontWeight = FontWeights.SemiBold });
             stack.Children.Add(BuildMarkdown(string.IsNullOrWhiteSpace(text) ? AsT("(no response)", "(응답 없음)") : text));
             if (hitLimit)
                 stack.Children.Add(new TextBlock { Text = AsT("Stopped at the step limit.", "단계 제한에 도달해 중단했습니다."), FontSize = 11, Opacity = 0.6 });
-            AddAssistantRow(stack);
+            bubble.Child = stack;
+            AddAssistantRow(bubble, animate);
         }
 
         private void AddAssistantError(string text)
         {
-            var box = AsXaml<Border>("<Border CornerRadius='10' Padding='12,8' Background='{ThemeResource SystemFillColorCriticalBackgroundBrush}'/>");
+            var box = AsXaml<Border>("<Border CornerRadius='14' Padding='14,10' Background='{ThemeResource SystemFillColorCriticalBackgroundBrush}'/>");
             box.Child = new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true, FontSize = 12 };
             AddAssistantRow(box);
         }
 
         private void AddAssistantNote(string text)
         {
-            AddAssistantRow(new TextBlock { Text = text, FontSize = 11, Opacity = 0.6, TextWrapping = TextWrapping.Wrap });
+            AddAssistantRow(new TextBlock { Text = text, FontSize = 11, Opacity = 0.6, TextWrapping = TextWrapping.Wrap, HorizontalAlignment = HorizontalAlignment.Center });
         }
 
         private void ShowThinking()
         {
             _asstThinkingText = new TextBlock { Text = AsT("Thinking…", "생각 중…"), FontSize = 12, Opacity = 0.7, VerticalAlignment = VerticalAlignment.Center };
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-            row.Children.Add(new ProgressRing { IsActive = true, Width = 16, Height = 16 });
-            row.Children.Add(_asstThinkingText);
+            var inner = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            inner.Children.Add(new ProgressRing { IsActive = true, Width = 14, Height = 14 });
+            inner.Children.Add(_asstThinkingText);
+            var row = AsXaml<Border>("<Border HorizontalAlignment='Left' CornerRadius='18,18,18,5' Padding='14,9' Background='{ThemeResource SpanBgLayer2Brush}'/>");
+            row.Child = inner;
             _asstThinkingRow = row;
             AddAssistantRow(row);
         }
@@ -544,11 +582,7 @@ namespace Span
 
         private void OnAssistantNewChatClick(object sender, RoutedEventArgs e)
         {
-            _asstCts?.Cancel();
-            _asstAgent?.ResetConversation();
-            HideThinking();
-            ShowAssistantEmptyState();
-            AssistantInput.Focus(FocusState.Programmatic);
+            StartNewAssistantChat();
         }
 
         private void OnAssistantInputKeyDown(object sender, KeyRoutedEventArgs e)
@@ -613,6 +647,7 @@ namespace Span
             _asstAgent.CurrentFolder = folder;
             var enabled = AsstEnabledSkillIds();
             _asstAgent.SkillInstructions = AssistantSkillPrompt.Build(AsstSkills.List().Where(s => enabled.Contains(s.Id)));
+            if (_asstRestoreTurns != null) { _asstAgent.RestoreHistory(_asstRestoreTurns); _asstRestoreTurns = null; }
 
             _asstCts = new CancellationTokenSource();
             var token = _asstCts.Token;
@@ -623,6 +658,7 @@ namespace Span
                     attachments);
                 HideThinking();
                 AddAssistantMessage(result.Text, result.HitTurnLimit);
+                PersistAssistantExchange(text, attachments, result.Text);
                 if (result.Plan.Count > 0) AddPlanCard(result.Plan);
             }
             catch (OperationCanceledException)
@@ -666,8 +702,7 @@ namespace Span
 
         private void AddPlanCard(IReadOnlyList<PlannedOperation> plan)
         {
-            var card = AsXaml<Border>("<Border CornerRadius='10' Padding='12' Background='{ThemeResource SpanBgLayer2Brush}' " +
-                                      "BorderBrush='{ThemeResource SpanBorderSubtleBrush}' BorderThickness='1'/>");
+            var card = AsXaml<Border>("<Border CornerRadius='16' Padding='14' Background='{ThemeResource SpanBgLayer2Brush}'/>");
             var stack = new StackPanel { Spacing = 6 };
             stack.Children.Add(new TextBlock
             {
@@ -685,8 +720,8 @@ namespace Span
             stack.Children.Add(new ScrollViewer { Content = list, MaxHeight = 220, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
 
             var status = new TextBlock { FontSize = 12, Opacity = 0.8, TextWrapping = TextWrapping.Wrap };
-            var run = new Button { Content = AsT("Run checked", "체크한 항목 실행"), Style = (Style)Application.Current.Resources["AccentButtonStyle"] };
-            var discard = new Button { Content = AsT("Discard", "버리기") };
+            var run = new Button { Content = AsT("Run checked", "체크한 항목 실행"), Style = (Style)Application.Current.Resources["AccentButtonStyle"], CornerRadius = new CornerRadius(12) };
+            var discard = new Button { Content = AsT("Discard", "버리기"), CornerRadius = new CornerRadius(12) };
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { run, discard } };
             stack.Children.Add(buttons);
             stack.Children.Add(status);

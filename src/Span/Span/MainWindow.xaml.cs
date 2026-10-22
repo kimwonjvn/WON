@@ -3211,6 +3211,7 @@ namespace Span
                     case "Network": ViewModel.IsNetworkDrivesExpanded = !ViewModel.IsNetworkDrivesExpanded; break;
                     case "Servers": ViewModel.IsServerDrivesExpanded = !ViewModel.IsServerDrivesExpanded; break;
                     case "LocalServers": ViewModel.IsLocalServersExpanded = !ViewModel.IsLocalServersExpanded; break;
+                    case "RecentDocs": ToggleRecentDocsExpanded(); break;
                 }
             }
         }
@@ -3237,6 +3238,7 @@ namespace Span
                     case "Network": _settings.SidebarShowNetwork = false; break;
                     case "Servers": _settings.SidebarShowServers = false; break;
                     case "LocalServers": _settings.SidebarShowLocalServers = false; break;
+                    case "RecentDocs": _settings.SidebarShowRecentDocs = false; break;
                 }
                 ApplySidebarSectionVisibility();
             };
@@ -4528,6 +4530,7 @@ namespace Span
             SidebarNetworkSection.Visibility = _settings.SidebarShowNetwork && ViewModel.HasNetworkDrives ? v : c;
             SidebarServersSection.Visibility = _settings.SidebarShowServers ? v : c;
             SidebarLocalServersSection.Visibility = _settings.SidebarShowLocalServers ? v : c;
+            SidebarRecentDocsSection.Visibility = _settings.SidebarShowRecentDocs ? v : c;
             SidebarRecycleBinSection.Visibility = _settings.SidebarShowRecycleBin ? v : c;
         }
 

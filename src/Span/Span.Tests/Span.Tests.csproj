@@ -56,6 +56,8 @@
     <Compile Include="..\Span\Services\Assistant\AssistantAgent.cs" Link="Sources\Services\Assistant\AssistantAgent.cs" />
     <Compile Include="..\Span\Services\Assistant\AssistantAttachments.cs" Link="Sources\Services\Assistant\AssistantAttachments.cs" />
     <Compile Include="..\Span\Services\Assistant\AssistantSkills.cs" Link="Sources\Services\Assistant\AssistantSkills.cs" />
+    <Compile Include="..\Span\Services\RecentDocumentsService.cs" Link="Sources\Services\RecentDocumentsService.cs" />
+    <Compile Include="..\Span\Services\Assistant\AssistantChatStore.cs" Link="Sources\Services\Assistant\AssistantChatStore.cs" />
     <Compile Include="..\Span\Helpers\ViewModeExtensions.cs" Link="Sources\Helpers\ViewModeExtensions.cs" />
     <Compile Include="..\Span\Helpers\SearchQueryParser.cs" Link="Sources\Helpers\SearchQueryParser.cs" />
     <Compile Include="..\Span\Helpers\WildcardRegex.cs" Link="Sources\Helpers\WildcardRegex.cs" />

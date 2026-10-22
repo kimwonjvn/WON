@@ -14,7 +14,8 @@ WON is a fork of [SPAN Finder](https://github.com/LumiBearStudio/SpanFinder) by 
 - **Path bar toggle** — `Ctrl+Shift+L` hides/shows the path bar; `Ctrl+L` summons it while hidden.
 - **Column fold** — right-click a Miller column: *Close this column* (also folds every column to its left) / *Show parent columns* (reopens the nearest folded one).
 - **AI assistant** (toolbar button next to Split View, or `Ctrl+Shift+K`) — a chat panel that slides in from the right; give folder commands in plain language through the Claude or OpenAI API or a local model (Ollama), switch models, attach files/images, and add skills. See below.
-- **Custom app icon** (a blue folder with a W).
+- **Recent documents** — a sidebar section (Excel / PowerPoint / Documents) built from Windows' own recent-items shortcuts. Click a row for the latest files, click a file to open it, right-click for *Show in folder* / *Copy path*. Hide it from the section header's right-click menu or in Settings → Sidebar.
+- **Custom app icon** (a transparent-background blue folder with a W), shipped in every size/variant Windows asks for so the taskbar does not paint a coloured plate behind it.
 - Rebranded package identity (`WON.FileExplorer`, publisher `CN=WON`).
 
 ## AI assistant
@@ -26,6 +27,7 @@ Off by default. Open the panel (toolbar button or `Ctrl+Shift+K`), turn it on in
 - The model can look around (list / search / info) but **cannot change anything**. Moves, copies, renames, new folders and deletes are shown as a plan; only the items you tick are executed, through WON's normal file-operation engine (deletes go to the Recycle Bin; `Ctrl+Z` undoes).
 - Protected locations (drive roots, Windows, Program Files, ProgramData, your profile root and its main folders) and overwriting existing items are refused.
 - **Skills** are extra instructions for the model: import a Claude `SKILL.md` (file or folder) or write your own, and switch them on/off. Only the text is used — scripts in a skill folder are never imported or run, and a skill cannot grant new tools or permissions.
+- **Chat history** is kept on this PC only (`%LOCALAPPDATA%\WON\assistant-chats`, one JSON file per chat): your messages and the replies, plus the *names* of attached files — never attachment contents, tool results or keys. Reopening the panel resumes the latest chat; the clock button lists past chats to continue or delete, and *Delete all chats* wipes them. Switch saving off in the panel settings.
 - A custom base URL (for example an in-house OpenAI-compatible server) must use https, or http on localhost.
 - **Local (Ollama)** provider: no API key and nothing leaves your PC. Install [Ollama](https://ollama.com), pull a tool-capable model (for example `ollama pull qwen3.5:9b`), then pick *Local (Ollama)* in the model menu. Only `localhost` addresses are accepted for this provider. Small models plan less reliably — you still tick and approve every change.
 - Check your organisation's policy first: with a cloud provider, names and paths leave the machine when this is on.

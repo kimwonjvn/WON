@@ -1118,6 +1118,7 @@
             ("Settings_SidebarShowNetwork", "Sidebar: Network", "사이드바: 네트워크", "サイドバー: ネットワーク", "侧边栏: 网络", "側邊欄: 網路", "Seitenleiste: Netzwerk", "Barra lateral: Red", "Barre latérale : Réseau", "Barra lateral: Rede"),
             ("Settings_SidebarShowServers", "Sidebar: Servers", "사이드바: 서버", "サイドバー: サーバー", "侧边栏: 服务器", "側邊欄: 伺服器", "Seitenleiste: Server", "Barra lateral: Servidores", "Barre latérale : Serveurs", "Barra lateral: Servidores"),
             ("Settings_SidebarShowLocalServers", "Sidebar: Local Servers", "사이드바: 로컬 서버", "サイドバー: ローカルサーバー", "侧边栏: 本地服务器", "側邊欄: 本機伺服器", "Seitenleiste: Lokale Server", "Barra lateral: Servidores locales", "Barre latérale : Serveurs locaux", "Barra lateral: Servidores locais"),
+            ("Settings_RecentDocs", "Recent documents", "최근 문서", "最近のドキュメント", "最近文档", "最近文件", "Zuletzt verwendete Dokumente", "Documentos recientes", "Documents récents", "Documentos recentes"),
             ("Settings_ShowAddressBar", "Path bar", "경로 표시줄", "パスバー", "路径栏", "路徑列", "Pfadleiste", "Barra de ruta", "Barre de chemin", "Barra de caminho"),
             ("Settings_SidebarShowRecycleBin", "Sidebar: Recycle Bin", "사이드바: 휴지통", "サイドバー: ごみ箱", "侧边栏: 回收站", "側邊欄: 資源回收筒", "Seitenleiste: Papierkorb", "Barra lateral: Papelera", "Barre latérale : Corbeille", "Barra lateral: Lixeira"),
 
