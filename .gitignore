@@ -24,7 +24,9 @@ AGENTS.md
 .agents/
 .mcp.json
 ROADMAP.md
-docs/
+docs/*
+# WON user-facing guides are tracked
+!docs/AI_ASSISTANT_GUIDE.md
 design/
 
 # Build/debug artifacts

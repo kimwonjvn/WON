@@ -96,6 +96,7 @@ namespace Span
             RefreshAssistantChrome();
             RefreshAssistantSettingsUi();
             AssistantSettingsArea.Visibility = IsAssistantReady(out _) ? Visibility.Collapsed : Visibility.Visible;
+            MaybeCheckLocalAi();
             AssistantPanel.Visibility = Visibility.Visible;
             AnimateAssistantPanel(open: true);
             DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () => AssistantInput.Focus(FocusState.Programmatic));
@@ -176,6 +177,7 @@ namespace Span
             ToolTipService.SetToolTip(AssistantCloseButton, AsT("Close", "닫기"));
             ToolTipService.SetToolTip(AssistantHistoryButton, AsT("Chat history", "대화 기록"));
             AssistantHistoryToggle.Header = AsT("Save chat history on this PC", "이 PC에 대화 기록 저장");
+            ApplyLocalAiTexts();
             ToolTipService.SetToolTip(AssistantAttachButton, AsT("Attach file or image", "파일/이미지 첨부"));
             ToolTipService.SetToolTip(AssistantSkillsButton, AsT("Skills", "스킬"));
             ToolTipService.SetToolTip(AssistantSendButton, AsT("Send (Enter)", "보내기 (Enter)"));
@@ -267,6 +269,7 @@ namespace Span
                 AssistantEnableToggle.IsOn = AsstSettings.Get(AsstEnabledKey, false);
                 AssistantHistoryToggle.IsOn = AsstHistoryEnabled;
                 bool isLocal = p == "Local";
+                AssistantLocalPanel.Visibility = isLocal ? Visibility.Visible : Visibility.Collapsed;
                 AssistantKeyBox.Visibility = AssistantKeySaveButton.Visibility = AssistantKeyClearButton.Visibility = isLocal ? Visibility.Collapsed : Visibility.Visible;
                 AssistantKeyBox.Header = AsT($"{p} API key", $"{p} API 키");
                 AssistantKeyBox.PlaceholderText = hasKey ? AsT("(saved — paste a new key to replace)", "(저장됨 — 바꾸려면 새 키를 붙여넣기)") : "sk-…";
@@ -277,9 +280,7 @@ namespace Span
                     : AsT("Base URL (optional, https only)", "Base URL (선택, https만)");
                 AssistantBaseUrlBox.PlaceholderText = AsstDefaultBase(p);
                 AssistantBaseUrlBox.Text = AsstBaseUrl(p);
-                AssistantSettingsStatus.Text = isLocal
-                    ? AsT("Local model: no API key needed. Run Ollama on this PC; nothing leaves it.", "로컬 모델: API 키가 필요 없습니다. 이 PC에서 Ollama를 실행하며 내용이 PC 밖으로 나가지 않습니다.")
-                    : string.Empty;
+                AssistantSettingsStatus.Text = string.Empty;
             }
             finally { _asstUiLoading = false; }
         }
@@ -289,6 +290,7 @@ namespace Span
             var show = AssistantSettingsArea.Visibility != Visibility.Visible;
             if (show) RefreshAssistantSettingsUi();
             AssistantSettingsArea.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+            if (show) MaybeCheckLocalAi();
         }
 
         private void OnAssistantEnableToggled(object sender, RoutedEventArgs e)
@@ -376,7 +378,7 @@ namespace Span
             AsstSettings.Set(AsstProviderKey, provider);
             AsstSettings.Set(AsstModelKey + "." + provider, model);
             RefreshAssistantChrome();
-            if (_asstOpen && AssistantSettingsArea.Visibility == Visibility.Visible) RefreshAssistantSettingsUi();
+            if (_asstOpen && AssistantSettingsArea.Visibility == Visibility.Visible) { RefreshAssistantSettingsUi(); MaybeCheckLocalAi(); }
         }
 
         private async Task PromptCustomModelAsync(string provider)
@@ -670,8 +672,15 @@ namespace Span
             catch (LlmException ex)
             {
                 HideThinking();
-                AddAssistantError(AsT("Error: ", "오류: ") + ex.Message);
+                var tip = AsstProvider() == "Local" ? LocalAiHelper.ExplainError(ex.Message, AsstModel("Local"), AsstKo) : null;
+                AddAssistantError(tip != null ? tip : AsT("Error: ", "오류: ") + ex.Message);
                 RestoreComposer(text, attachments);
+                if (tip != null)
+                {
+                    RefreshAssistantSettingsUi();
+                    AssistantSettingsArea.Visibility = Visibility.Visible;
+                    MaybeCheckLocalAi();
+                }
             }
             catch (Exception ex)
             {

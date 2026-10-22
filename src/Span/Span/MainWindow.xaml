@@ -1871,7 +1871,8 @@
 
                         <Border x:Name="AssistantSettingsArea" Visibility="Collapsed" Margin="14,2,14,8" Padding="14,12" CornerRadius="14"
                                 Background="{ThemeResource SpanBgLayer2Brush}">
-                            <StackPanel Spacing="8">
+                            <ScrollViewer MaxHeight="430" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel Spacing="8" Margin="0,0,10,0">
                                 <ToggleSwitch x:Name="AssistantEnableToggle" OnContent="" OffContent="" Toggled="OnAssistantEnableToggled"/>
                                 <ToggleSwitch x:Name="AssistantHistoryToggle" OnContent="" OffContent="" Toggled="OnAssistantHistoryToggled"/>
                                 <TextBlock x:Name="AssistantPrivacyText" FontSize="12" Opacity="0.7" TextWrapping="Wrap"/>
@@ -1881,8 +1882,25 @@
                                     <Button x:Name="AssistantKeyClearButton" CornerRadius="10" Click="OnAssistantKeyClearClick"/>
                                 </StackPanel>
                                 <TextBox x:Name="AssistantBaseUrlBox" CornerRadius="10" LostFocus="OnAssistantBaseUrlLostFocus"/>
+                                <!-- Local AI (Ollama) setup helper: only shown for the Local provider -->
+                                <StackPanel x:Name="AssistantLocalPanel" Spacing="8" Visibility="Collapsed">
+                                    <TextBlock x:Name="AssistantLocalTitle" FontWeight="SemiBold" FontSize="13"/>
+                                    <TextBlock x:Name="AssistantLocalSteps" FontSize="12" Opacity="0.8" TextWrapping="Wrap"/>
+                                    <TextBlock x:Name="AssistantLocalStatus" FontSize="12" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
+                                    <ProgressBar x:Name="AssistantLocalProgress" Minimum="0" Maximum="1" Visibility="Collapsed"/>
+                                    <TextBlock x:Name="AssistantLocalProgressText" FontSize="11" Opacity="0.7" TextWrapping="Wrap" Visibility="Collapsed"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <Button x:Name="AssistantLocalDownloadButton" CornerRadius="10" Click="OnLocalAiDownloadClick"/>
+                                        <Button x:Name="AssistantLocalCheckButton" CornerRadius="10" Click="OnLocalAiCheckClick"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <Button x:Name="AssistantLocalPullButton" CornerRadius="10" Click="OnLocalAiPullClick"/>
+                                        <Button x:Name="AssistantLocalGuideButton" CornerRadius="10" Click="OnLocalAiGuideClick"/>
+                                    </StackPanel>
+                                </StackPanel>
                                 <TextBlock x:Name="AssistantSettingsStatus" FontSize="12" Opacity="0.8" TextWrapping="Wrap"/>
                             </StackPanel>
+                            </ScrollViewer>
                         </Border>
 
                         <ScrollViewer x:Name="AssistantScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">

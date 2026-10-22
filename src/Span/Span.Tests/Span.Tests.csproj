@@ -62,6 +62,7 @@
     <Compile Include="..\Span\Services\PdfConversion\LibreOfficeEngine.cs" Link="Sources\Services\PdfConversion\LibreOfficeEngine.cs" />
     <Compile Include="..\Span\Services\PdfConversion\OfficeComEngines.cs" Link="Sources\Services\PdfConversion\OfficeComEngines.cs" />
     <Compile Include="..\Span\Services\PdfConversion\PdfImageLoader.cs" Link="Sources\Services\PdfConversion\PdfImageLoader.cs" />
+    <Compile Include="..\Span\Services\Assistant\LocalAiHelper.cs" Link="Sources\Services\Assistant\LocalAiHelper.cs" />
     <Compile Include="..\Span\Services\Assistant\AssistantChatStore.cs" Link="Sources\Services\Assistant\AssistantChatStore.cs" />
     <Compile Include="..\Span\Helpers\ViewModeExtensions.cs" Link="Sources\Helpers\ViewModeExtensions.cs" />
     <Compile Include="..\Span\Helpers\SearchQueryParser.cs" Link="Sources\Helpers\SearchQueryParser.cs" />
