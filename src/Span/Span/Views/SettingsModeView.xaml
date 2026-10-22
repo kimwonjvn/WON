@@ -377,21 +377,6 @@
                             <TextBlock Grid.Column="1" Text="정보" FontSize="13"
                                        VerticalAlignment="Center"/>
                         </Grid>
-                        <Grid x:Name="NavSupport" Height="28" Padding="12,0" Tag="Support"
-                              Background="Transparent"
-                              Tapped="OnNavItemTapped"
-                              PointerEntered="OnNavItemPointerEntered" PointerExited="OnNavItemPointerExited"
-                              helpers:CursorHelper.IsHandCursor="True">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <FontIcon Grid.Column="0" Glyph="&#xEB52;" FontSize="16"
-                                      Foreground="#FF69B4"
-                                      VerticalAlignment="Center" Margin="0,0,12,0"/>
-                            <TextBlock x:Name="NavSupportText" Grid.Column="1" Text="후원" FontSize="13"
-                                       VerticalAlignment="Center"/>
-                        </Grid>
                         <Grid x:Name="NavOpenSource" Height="28" Padding="12,0" Tag="OpenSource"
                               Background="Transparent"
                               Tapped="OnNavItemTapped"
@@ -2089,105 +2074,6 @@
                         </StackPanel>
                     </ScrollViewer>
 
-                    <!-- ===== Support Section ===== -->
-                    <ScrollViewer x:Name="SupportSection" Visibility="Collapsed">
-                        <StackPanel Padding="20" Spacing="0">
-                            <TextBlock x:Name="SupportTitle" Text="개발자 후원" Style="{StaticResource SettingsSectionTitle}" />
-                            <TextBlock x:Name="SupportDesc" Text="WON은 무료 오픈소스 프로젝트입니다. 개발을 응원해 주시면 큰 힘이 됩니다!"
-                                       FontSize="12" Foreground="{ThemeResource SpanTextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,12"/>
-
-                            <!-- GitHub Sponsors -->
-                            <Border Style="{StaticResource SettingsCardBorder}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" Style="{StaticResource CardIconContainer}">
-                                        <FontIcon Glyph="&#xEB52;" Style="{StaticResource CardIconStyle}" Foreground="#FF69B4"/>
-                                    </Border>
-                                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
-                                        <TextBlock x:Name="SupportGitHubLabel" Text="GitHub Sponsors" Style="{StaticResource SettingsCardLabel}" />
-                                        <TextBlock x:Name="SupportGitHubDesc" Text="GitHub에서 후원하기" Style="{StaticResource SettingsCardDesc}" />
-                                    </StackPanel>
-                                    <Button x:Name="SupportGitHubBtn" Grid.Column="2" Content="Open" MinWidth="70"
-                                            Click="OnSupportGitHubClick" VerticalAlignment="Center"
-                                            helpers:CursorHelper.IsHandCursor="True"/>
-                                </Grid>
-                            </Border>
-
-                            <!-- MS Store 후원 -->
-                            <TextBlock x:Name="SupportStoreTitle" Text="Microsoft Store" Style="{StaticResource SettingsCardLabel}"
-                                       Margin="0,12,0,4" FontSize="13" Foreground="{ThemeResource SpanTextSecondaryBrush}"/>
-                            <TextBlock x:Name="SupportStoreDesc" Text="Store 내 구매로 후원" FontSize="11"
-                                       Foreground="{ThemeResource SpanTextTertiaryBrush}" Margin="0,0,0,8"/>
-
-                            <!-- Coffee -->
-                            <Border Style="{StaticResource SettingsCardBorder}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" Style="{StaticResource CardIconContainer}">
-                                        <Image Source="ms-appx:///Assets/icon_coffee.png" Width="24" Height="24"/>
-                                    </Border>
-                                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
-                                        <TextBlock Text="Coffee" Style="{StaticResource SettingsCardLabel}" />
-                                        <TextBlock x:Name="SupportCoffeePrice" Text="$2.99" Style="{StaticResource SettingsCardDesc}" />
-                                    </StackPanel>
-                                    <Button x:Name="SupportCoffeeBtn" Grid.Column="2" Content="Buy" MinWidth="70"
-                                            Click="OnSupportCoffeeClick" VerticalAlignment="Center"
-                                            helpers:CursorHelper.IsHandCursor="True"/>
-                                </Grid>
-                            </Border>
-
-                            <!-- Hamburger -->
-                            <Border Style="{StaticResource SettingsCardBorder}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" Style="{StaticResource CardIconContainer}">
-                                        <Image Source="ms-appx:///Assets/icon_hamburger.png" Width="24" Height="24"/>
-                                    </Border>
-                                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
-                                        <TextBlock Text="Hamburger" Style="{StaticResource SettingsCardLabel}" />
-                                        <TextBlock x:Name="SupportHamburgerPrice" Text="$5.99" Style="{StaticResource SettingsCardDesc}" />
-                                    </StackPanel>
-                                    <Button x:Name="SupportHamburgerBtn" Grid.Column="2" Content="Buy" MinWidth="70"
-                                            Click="OnSupportHamburgerClick" VerticalAlignment="Center"
-                                            helpers:CursorHelper.IsHandCursor="True"/>
-                                </Grid>
-                            </Border>
-
-                            <!-- Steak -->
-                            <Border Style="{StaticResource SettingsCardBorder}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" Style="{StaticResource CardIconContainer}">
-                                        <Image Source="ms-appx:///Assets/icon_steak.png" Width="24" Height="24"/>
-                                    </Border>
-                                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
-                                        <TextBlock Text="Steak" Style="{StaticResource SettingsCardLabel}" />
-                                        <TextBlock x:Name="SupportSteakPrice" Text="$8.99" Style="{StaticResource SettingsCardDesc}" />
-                                    </StackPanel>
-                                    <Button x:Name="SupportSteakBtn" Grid.Column="2" Content="Buy" MinWidth="70"
-                                            Click="OnSupportSteakClick" VerticalAlignment="Center"
-                                            helpers:CursorHelper.IsHandCursor="True"/>
-                                </Grid>
-                            </Border>
-                        </StackPanel>
-                    </ScrollViewer>
-
                     <!-- ===== About Section ===== -->
                     <ScrollViewer x:Name="AboutSection" Visibility="Collapsed">
                         <StackPanel Padding="20" Spacing="0">
@@ -2255,53 +2141,6 @@
                                             <FontIcon Glyph="&#xE8A7;" FontSize="10" Foreground="{ThemeResource SpanTextSecondaryBrush}" />
                                         </StackPanel>
                                     </HyperlinkButton>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- Buy me a coffee (hidden until donation feature is ready) -->
-                            <Border Style="{StaticResource SettingsCardBorder}" Visibility="Collapsed">
-                                <StackPanel Spacing="12">
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border Style="{StaticResource CardIconContainer}">
-                                            <FontIcon Glyph="&#xED54;" Style="{StaticResource CardIconStyle}" />
-                                        </Border>
-                                        <StackPanel Spacing="2" VerticalAlignment="Center">
-                                            <TextBlock x:Name="CoffeeLabel" Text="Buy me a coffee" Style="{StaticResource SettingsCardLabel}" />
-                                            <TextBlock x:Name="CoffeeDesc" Text="Span이 마음에 드셨다면, 커피 한 잔으로 응원해 주세요!" Style="{StaticResource SettingsCardDesc}" />
-                                        </StackPanel>
-                                    </StackPanel>
-                                    <Grid Margin="48,0,0,0" ColumnSpacing="8">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <Button Grid.Column="0" HorizontalAlignment="Stretch" Padding="8,12" CornerRadius="8" Background="{ThemeResource SpanBgLayer2Brush}">
-                                            <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                                <TextBlock Text="&#x2615;" FontSize="20" HorizontalAlignment="Center" />
-                                                <TextBlock Text="$3" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{ThemeResource SpanTextPrimaryBrush}" />
-                                            </StackPanel>
-                                        </Button>
-                                        <Button Grid.Column="1" HorizontalAlignment="Stretch" Padding="8,12" CornerRadius="8" Background="{ThemeResource SpanBgLayer2Brush}">
-                                            <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                                <TextBlock Text="&#x1F370;" FontSize="20" HorizontalAlignment="Center" />
-                                                <TextBlock Text="$5" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{ThemeResource SpanTextPrimaryBrush}" />
-                                            </StackPanel>
-                                        </Button>
-                                        <Button Grid.Column="2" HorizontalAlignment="Stretch" Padding="8,12" CornerRadius="8" Background="{ThemeResource SpanBgLayer2Brush}">
-                                            <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                                <TextBlock Text="&#x1F355;" FontSize="20" HorizontalAlignment="Center" />
-                                                <TextBlock Text="$10" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{ThemeResource SpanTextPrimaryBrush}" />
-                                            </StackPanel>
-                                        </Button>
-                                        <Button Grid.Column="3" HorizontalAlignment="Stretch" Padding="8,12" CornerRadius="8" Background="{ThemeResource SpanAccentBrush}">
-                                            <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                                <TextBlock Text="&#x1F680;" FontSize="20" HorizontalAlignment="Center" />
-                                                <TextBlock Text="$50" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="White" />
-                                            </StackPanel>
-                                        </Button>
-                                    </Grid>
                                 </StackPanel>
                             </Border>
 

@@ -70,7 +70,6 @@ public sealed partial class SettingsModeView : UserControl
             ToolsSection,
             ShortcutsSection,
             AdvancedSection,
-            SupportSection,
             AboutSection,
             OpenSourceSection
         };
@@ -592,7 +591,6 @@ public sealed partial class SettingsModeView : UserControl
             "Tools" => ToolsSection,
             "Shortcuts" => ShortcutsSection,
             "Advanced" => AdvancedSection,
-            "Support" => SupportSection,
             "About" => AboutSection,
             "OpenSource" => OpenSourceSection,
             _ => GeneralSection
@@ -655,7 +653,6 @@ public sealed partial class SettingsModeView : UserControl
             SetNavText(NavTools, _loc.Get("Settings_Tools"));
             SetNavText(NavShortcuts, _loc.Get("Settings_Shortcuts") ?? "단축키");
             SetNavText(NavAdvanced, _loc.Get("Settings_Advanced"));
-            SetNavText(NavSupport, _loc.Get("Settings_SupportNav") ?? "Support");
             SetNavText(NavAbout, _loc.Get("Settings_AboutNav"));
             SetNavText(NavOpenSource, _loc.Get("Settings_OpenSourceNav"));
 
@@ -848,13 +845,6 @@ public sealed partial class SettingsModeView : UserControl
             FileHashLabel.Text = _loc.Get("Settings_FileHash");
             FileHashDesc.Text = _loc.Get("Settings_FileHashDesc");
 
-            // Support Development
-            SupportTitle.Text = _loc.Get("Settings_SupportTitle") ?? "Support Development";
-            SupportDesc.Text = _loc.Get("Settings_SupportDesc") ?? "WON is a free open-source project. Your support means a lot!";
-            SupportGitHubDesc.Text = _loc.Get("Settings_SupportGitHubDesc") ?? "Sponsor on GitHub";
-            SupportStoreTitle.Text = _loc.Get("Settings_SupportStoreTitle") ?? "Microsoft Store";
-            SupportStoreDesc.Text = _loc.Get("Settings_SupportStoreDesc") ?? "Support via Store purchase";
-
             // About
             AboutTitle.Text = _loc.Get("Settings_AboutNav");
             CopyrightLabel.Text = "© 2026 LumiBear Studio. All rights reserved.";
@@ -864,8 +854,6 @@ public sealed partial class SettingsModeView : UserControl
             GitHubText.Text = _loc.Get("Settings_GitHub");
             BugReportText.Text = _loc.Get("Settings_BugReport");
             PrivacyText.Text = _loc.Get("Settings_Privacy");
-            CoffeeLabel.Text = _loc.Get("Settings_BuyMeCoffee");
-            CoffeeDesc.Text = _loc.Get("Settings_BuyMeCoffeeDesc");
 
             // Open Source
             OpenSourceTitle.Text = _loc.Get("Settings_OpenSourceNav");
@@ -1029,7 +1017,7 @@ public sealed partial class SettingsModeView : UserControl
         double navText = 13.0 + level;
         double navIcon = 16.0 + level;
         Grid[] navItems = { NavGeneral, NavAppearance, NavBrowsing, NavSidebar,
-                            NavTools, NavShortcuts, NavAdvanced, NavAbout, NavSupport, NavOpenSource };
+                            NavTools, NavShortcuts, NavAdvanced, NavAbout, NavOpenSource };
         foreach (var nav in navItems)
         {
             foreach (var child in nav.Children)
@@ -1978,8 +1966,6 @@ public sealed partial class SettingsModeView : UserControl
         }
     }
 
-    // ── Support Development ──
-
     private void OnSettingsSidebarSizeChanged(object sender, SizeChangedEventArgs e)
     {
         // TODO: 곰돌이 완성 후 Collapsed 해제
@@ -2008,11 +1994,6 @@ public sealed partial class SettingsModeView : UserControl
         }
     }
 
-    private async void OnSupportGitHubClick(object sender, RoutedEventArgs e)
-    {
-        try { /* WON: upstream sponsor link removed */ await System.Threading.Tasks.Task.CompletedTask; } catch { }
-    }
-
     private async void OnOpenLogsFolder(object sender, RoutedEventArgs e)
     {
         try
@@ -2035,92 +2016,6 @@ public sealed partial class SettingsModeView : UserControl
             Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(pkg);
         }
         catch (Exception ex) { Helpers.DebugLogger.Log($"[SettingsView] OnCopyLogsPath failed: {ex.Message}"); }
-    }
-
-    private async void OnSupportCoffeeClick(object sender, RoutedEventArgs e)
-    {
-        try { await PurchaseAddonAsync("9N6NW4DXJJ4R"); }
-        catch (Exception ex)
-        {
-            Helpers.DebugLogger.Log($"[Store] Coffee purchase error: {ex.Message}");
-            try { App.Current.Services.GetService<Services.CrashReportingService>()?.CaptureException(ex, "OnSupportCoffeeClick"); } catch { }
-        }
-    }
-
-    private async void OnSupportHamburgerClick(object sender, RoutedEventArgs e)
-    {
-        try { await PurchaseAddonAsync("9NDJTWKC0J4G"); }
-        catch (Exception ex)
-        {
-            Helpers.DebugLogger.Log($"[Store] Hamburger purchase error: {ex.Message}");
-            try { App.Current.Services.GetService<Services.CrashReportingService>()?.CaptureException(ex, "OnSupportHamburgerClick"); } catch { }
-        }
-    }
-
-    private async void OnSupportSteakClick(object sender, RoutedEventArgs e)
-    {
-        try { await PurchaseAddonAsync("9PLL94FJHN51"); }
-        catch (Exception ex)
-        {
-            Helpers.DebugLogger.Log($"[Store] Steak purchase error: {ex.Message}");
-            try { App.Current.Services.GetService<Services.CrashReportingService>()?.CaptureException(ex, "OnSupportSteakClick"); } catch { }
-        }
-    }
-
-    private async Task PurchaseAddonAsync(string storeId)
-    {
-        try
-        {
-            var storeContext = Windows.Services.Store.StoreContext.GetDefault();
-            // WinUI 3: 윈도우 핸들 연결
-            var windows = ((App)App.Current).GetRegisteredWindows();
-            if (windows.Count == 0) return;
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(windows[0]);
-            WinRT.Interop.InitializeWithWindow.Initialize(storeContext, hwnd);
-
-            var result = await storeContext.RequestPurchaseAsync(storeId);
-            switch (result.Status)
-            {
-                case Windows.Services.Store.StorePurchaseStatus.Succeeded:
-                case Windows.Services.Store.StorePurchaseStatus.AlreadyPurchased:
-                    await ShowStoreDialogAsync(
-                        _loc.Get("Settings_SupportThanksTitle") ?? "Thank you!",
-                        _loc.Get("Settings_SupportThanksMsg") ?? "Your support means a lot!");
-                    break;
-                case Windows.Services.Store.StorePurchaseStatus.NotPurchased:
-                    // 사용자가 취소한 경우 — 조용히 무시
-                    break;
-                case Windows.Services.Store.StorePurchaseStatus.NetworkError:
-                    await ShowStoreDialogAsync(
-                        _loc.Get("Settings_SupportErrorTitle") ?? "Connection Error",
-                        _loc.Get("Settings_SupportNetworkError") ?? "Please check your internet connection and try again.");
-                    break;
-                case Windows.Services.Store.StorePurchaseStatus.ServerError:
-                    await ShowStoreDialogAsync(
-                        _loc.Get("Settings_SupportErrorTitle") ?? "Error",
-                        _loc.Get("Settings_SupportServerError") ?? "Microsoft Store is temporarily unavailable. Please try again later.");
-                    break;
-            }
-        }
-        catch (Exception ex)
-        {
-            Helpers.DebugLogger.Log($"[Store] Purchase failed: {ex.Message}");
-            await ShowStoreDialogAsync(
-                _loc.Get("Settings_SupportErrorTitle") ?? "Error",
-                _loc.Get("Settings_SupportStoreLoginError") ?? "Please sign in to the Microsoft Store and try again.");
-        }
-    }
-
-    private async Task ShowStoreDialogAsync(string title, string content)
-    {
-        var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
-        {
-            Title = title,
-            Content = content,
-            CloseButtonText = "OK",
-            XamlRoot = this.XamlRoot
-        };
-        await dialog.ShowAsync();
     }
 
     // ═══ Custom Accent Color ═══
