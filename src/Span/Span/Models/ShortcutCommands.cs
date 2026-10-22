@@ -44,6 +44,8 @@ namespace Span.Models
         public const string ViewIcon = "span.view.icon";
         public const string ToggleSplitView = "span.view.splitView";
         public const string ToolsAssistant = "span.tools.assistant";
+        public const string ToolsPdfConvert = "span.tools.pdfConvert";
+        public const string ToolsPdfMerge = "span.tools.pdfMerge";
         public const string TogglePreview = "span.view.preview";
         public const string EqualizeColumns = "span.view.equalizeColumns";
         public const string AutoFitColumns = "span.view.autoFitColumns";
@@ -188,6 +190,8 @@ namespace Span.Models
             { ViewIcon, "View" },
             { ToggleSplitView, "View" },
             { ToolsAssistant, "Window" },
+            { ToolsPdfConvert, "Edit" },
+            { ToolsPdfMerge, "Edit" },
             { TogglePreview, "View" },
             { EqualizeColumns, "View" },
             { AutoFitColumns, "View" },
@@ -324,6 +328,8 @@ namespace Span.Models
             { ViewIcon, "Shortcut_ViewIcon" },
             { ToggleSplitView, "Shortcut_ToggleSplitView" },
             { ToolsAssistant, "Shortcut_ToolsAssistant" },
+            { ToolsPdfConvert, "Shortcut_ToolsPdfConvert" },
+            { ToolsPdfMerge, "Shortcut_ToolsPdfMerge" },
             { TogglePreview, "Shortcut_TogglePreview" },
             { EqualizeColumns, "Shortcut_EqualizeColumns" },
             { AutoFitColumns, "Shortcut_AutoFitColumns" },

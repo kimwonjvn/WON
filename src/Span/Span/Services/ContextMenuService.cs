@@ -392,6 +392,13 @@ namespace Span.Services
                         menu.Items.Add(new MenuFlyoutSeparator());
                     }
                     menu.Items.Add(CreateItem(_loc.Get("CompressToZip"), "\uE8C5", () => host.PerformCompress(new[] { file.Path }), "P"));
+                    // PDF 변환 / 합치기 (이미지, Word, Excel, PowerPoint, HWP ...)
+                    if (host is IPdfConvertHost pdfHost && PdfConversion.PdfSourceClassifier.CanMerge(file.Path))
+                    {
+                        if (PdfConversion.PdfSourceClassifier.CanConvert(file.Path))
+                            menu.Items.Add(CreateItem(_loc.Get("PdfConvert"), "\uE8A5", () => pdfHost.PerformConvertToPdf(new[] { file.Path }, false), "F"));
+                        menu.Items.Add(CreateItem(_loc.Get("PdfMerge"), "\uE8C8", () => pdfHost.PerformConvertToPdf(new[] { file.Path }, true), "G"));
+                    }
                     menu.Items.Add(new MenuFlyoutSeparator());
 
                     menu.Items.Add(CreateItem(_loc.Get("Delete"), "\uE74D", () => host.PerformDelete(file.Path, file.Name), "D"));

@@ -255,6 +255,8 @@ public class KeyBindingService
             ["span.view.icon"]             = ["Ctrl+4"],
             ["span.view.splitView"]        = ["Ctrl+Shift+E"],
             ["span.tools.assistant"]       = ["Ctrl+Shift+K"],
+            ["span.tools.pdfConvert"]      = ["Ctrl+Shift+D"],
+            ["span.tools.pdfMerge"]        = ["Ctrl+Shift+M"],
             ["span.view.preview"]          = ["Ctrl+Shift+P"],
             ["span.view.equalizeColumns"]  = ["Ctrl+Shift+Plus"],
             ["span.view.autoFitColumns"]   = ["Ctrl+Shift+Minus"],

@@ -15,9 +15,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
     <!-- Sentry release 정확도 — Package.appxmanifest와 동기화 필요 (수동) -->
-    <Version>2.4.2</Version>
-    <AssemblyVersion>2.4.2.0</AssemblyVersion>
-    <FileVersion>2.4.2.0</FileVersion>
+    <Version>2.5.0</Version>
+    <AssemblyVersion>2.5.0.0</AssemblyVersion>
+    <FileVersion>2.5.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -154,6 +154,8 @@
     <PackageReference Include="ColorCode.WinUI" Version="2.0.15" />
     <PackageReference Include="CommunityToolkit.WinUI.Controls.Sizers" Version="8.2.251219" />
     <PackageReference Include="FluentFTP" Version="53.0.2" />
+    <!-- MIT. Pinned: 6.5.0+ is AGPL-3.0 -->
+    <PackageReference Include="PDFsharp" Version="[6.2.4]" />
     <PackageReference Include="H.NotifyIcon.WinUI" Version="2.2.0" />
 <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260209005" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />

@@ -1119,6 +1119,10 @@
             ("Settings_SidebarShowServers", "Sidebar: Servers", "사이드바: 서버", "サイドバー: サーバー", "侧边栏: 服务器", "側邊欄: 伺服器", "Seitenleiste: Server", "Barra lateral: Servidores", "Barre latérale : Serveurs", "Barra lateral: Servidores"),
             ("Settings_SidebarShowLocalServers", "Sidebar: Local Servers", "사이드바: 로컬 서버", "サイドバー: ローカルサーバー", "侧边栏: 本地服务器", "側邊欄: 本機伺服器", "Seitenleiste: Lokale Server", "Barra lateral: Servidores locales", "Barre latérale : Serveurs locaux", "Barra lateral: Servidores locais"),
             ("Settings_RecentDocs", "Recent documents", "최근 문서", "最近のドキュメント", "最近文档", "最近文件", "Zuletzt verwendete Dokumente", "Documentos recientes", "Documents récents", "Documentos recentes"),
+            ("PdfConvert", "Convert to PDF", "PDF로 변환", "PDFに変換", "转换为 PDF", "轉換為 PDF", "In PDF umwandeln", "Convertir a PDF", "Convertir en PDF", "Converter para PDF"),
+            ("PdfMerge", "Merge into one PDF", "하나의 PDF로 합치기", "1つのPDFに結合", "合并为一个 PDF", "合併為一個 PDF", "Zu einer PDF zusammenführen", "Combinar en un PDF", "Fusionner en un PDF", "Mesclar em um PDF"),
+            ("Shortcut_ToolsPdfConvert", "Convert selected files to PDF", "선택한 파일을 PDF로 변환", "選択したファイルをPDFに変換", "将所选文件转换为 PDF", "將選取的檔案轉換為 PDF", "Ausgewählte Dateien in PDF umwandeln", "Convertir los archivos seleccionados a PDF", "Convertir les fichiers sélectionnés en PDF", "Converter arquivos selecionados para PDF"),
+            ("Shortcut_ToolsPdfMerge", "Merge selected files into one PDF", "선택한 파일을 하나의 PDF로 합치기", "選択したファイルを1つのPDFに結合", "将所选文件合并为一个 PDF", "將選取的檔案合併為一個 PDF", "Ausgewählte Dateien zu einer PDF zusammenführen", "Combinar los archivos seleccionados en un PDF", "Fusionner les fichiers sélectionnés en un PDF", "Mesclar arquivos selecionados em um PDF"),
             ("Settings_ShowAddressBar", "Path bar", "경로 표시줄", "パスバー", "路径栏", "路徑列", "Pfadleiste", "Barra de ruta", "Barre de chemin", "Barra de caminho"),
             ("Settings_SidebarShowRecycleBin", "Sidebar: Recycle Bin", "사이드바: 휴지통", "サイドバー: ごみ箱", "侧边栏: 回收站", "側邊欄: 資源回收筒", "Seitenleiste: Papierkorb", "Barra lateral: Papelera", "Barre latérale : Corbeille", "Barra lateral: Lixeira"),
 

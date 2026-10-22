@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="PDFsharp" Version="[6.2.4]" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
@@ -57,6 +58,10 @@
     <Compile Include="..\Span\Services\Assistant\AssistantAttachments.cs" Link="Sources\Services\Assistant\AssistantAttachments.cs" />
     <Compile Include="..\Span\Services\Assistant\AssistantSkills.cs" Link="Sources\Services\Assistant\AssistantSkills.cs" />
     <Compile Include="..\Span\Services\RecentDocumentsService.cs" Link="Sources\Services\RecentDocumentsService.cs" />
+    <Compile Include="..\Span\Services\PdfConversion\PdfConversionCore.cs" Link="Sources\Services\PdfConversion\PdfConversionCore.cs" />
+    <Compile Include="..\Span\Services\PdfConversion\LibreOfficeEngine.cs" Link="Sources\Services\PdfConversion\LibreOfficeEngine.cs" />
+    <Compile Include="..\Span\Services\PdfConversion\OfficeComEngines.cs" Link="Sources\Services\PdfConversion\OfficeComEngines.cs" />
+    <Compile Include="..\Span\Services\PdfConversion\PdfImageLoader.cs" Link="Sources\Services\PdfConversion\PdfImageLoader.cs" />
     <Compile Include="..\Span\Services\Assistant\AssistantChatStore.cs" Link="Sources\Services\Assistant\AssistantChatStore.cs" />
     <Compile Include="..\Span\Helpers\ViewModeExtensions.cs" Link="Sources\Helpers\ViewModeExtensions.cs" />
     <Compile Include="..\Span\Helpers\SearchQueryParser.cs" Link="Sources\Helpers\SearchQueryParser.cs" />

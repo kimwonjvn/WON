@@ -15,6 +15,7 @@ WON is a fork of [SPAN Finder](https://github.com/LumiBearStudio/SpanFinder) by 
 - **Column fold** — right-click a Miller column: *Close this column* (also folds every column to its left) / *Show parent columns* (reopens the nearest folded one).
 - **AI assistant** (toolbar button next to Split View, or `Ctrl+Shift+K`) — a chat panel that slides in from the right; give folder commands in plain language through the Claude or OpenAI API or a local model (Ollama), switch models, attach files/images, and add skills. See below.
 - **Recent documents** — a sidebar section (Excel / PowerPoint / Documents) built from Windows' own recent-items shortcuts. Click a row for the latest files, click a file to open it, right-click for *Show in folder* / *Copy path*. Hide it from the section header's right-click menu or in Settings → Sidebar.
+- **PDF conversion** — right-click files → *Convert to PDF* / *Merge into one PDF*, or select files and press `Ctrl+Shift+D` / `Ctrl+Shift+M`. See below.
 - **Custom app icon** (a transparent-background blue folder with a W), shipped in every size/variant Windows asks for so the taskbar does not paint a coloured plate behind it.
 - Rebranded package identity (`WON.FileExplorer`, publisher `CN=WON`).
 
@@ -31,6 +32,20 @@ Off by default. Open the panel (toolbar button or `Ctrl+Shift+K`), turn it on in
 - A custom base URL (for example an in-house OpenAI-compatible server) must use https, or http on localhost.
 - **Local (Ollama)** provider: no API key and nothing leaves your PC. Install [Ollama](https://ollama.com), pull a tool-capable model (for example `ollama pull qwen3.5:9b`), then pick *Local (Ollama)* in the model menu. Only `localhost` addresses are accepted for this provider. Small models plan less reliably — you still tick and approve every change.
 - Check your organisation's policy first: with a cloud provider, names and paths leave the machine when this is on.
+
+## PDF conversion
+
+Select one or more files and use the context menu (*Convert to PDF*, *Merge into one PDF*) or the shortcuts `Ctrl+Shift+D` (convert) / `Ctrl+Shift+M` (merge; existing PDFs can be included). The new PDF is created **next to the original**; originals are never modified and existing files are never overwritten (`name (1).pdf`).
+
+| Source | Engine |
+|---|---|
+| PNG, JPG, BMP, GIF, TIFF, WebP, HEIC → PDF (A4, EXIF rotation applied) | built in — [PDFsharp](https://github.com/empira/PDFsharp) 6.2.4 (MIT; pinned because 6.5.0+ is AGPL) with Windows' image codecs |
+| PDF merge | built in — PDFsharp |
+| DOC/DOCX/RTF, XLS/XLSX/CSV, PPT/PPTX | Microsoft Office when installed (its own PDF export, macros disabled, opened read-only), otherwise [LibreOffice](https://www.libreoffice.org) (`soffice --headless --convert-to pdf`, own profile folder) |
+| HWP / HWPX | Hancom Office when installed, otherwise LibreOffice with the [H2Orestart](https://github.com/ebandal/H2Orestart) extension (GPL) |
+| ODT/ODS/ODP/TXT | LibreOffice |
+
+Nothing is uploaded anywhere: conversion runs on your PC. Office / Hancom / LibreOffice are **not bundled** — WON uses whatever is installed. Files from untrusted sources are opened by those programs just like double-clicking them.
 
 ## Build
 

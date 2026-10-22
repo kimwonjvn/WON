@@ -1018,6 +1018,12 @@ namespace Span
                 case ShortcutCommands.ToolsAssistant:
                     _ = ShowAssistantDialogAsync();
                     return true;
+                case ShortcutCommands.ToolsPdfConvert:
+                    StartPdfFromSelection(merge: false);
+                    return true;
+                case ShortcutCommands.ToolsPdfMerge:
+                    StartPdfFromSelection(merge: true);
+                    return true;
                 case ShortcutCommands.SettingsAddressBar:
                     ViewModel.IsAddressBarPeek = false;
                     ViewModel.IsAddressBarShown = !ViewModel.IsAddressBarShown;
