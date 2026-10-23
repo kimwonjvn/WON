@@ -159,7 +159,7 @@ namespace Span.ViewModels
                 // Don't persist Home, Settings, ActionLog or RecycleBin as startup mode
                 if (CurrentViewMode == ViewMode.Home || CurrentViewMode == ViewMode.Settings || CurrentViewMode == ViewMode.ActionLog || CurrentViewMode == ViewMode.RecycleBin) return;
 
-                var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                var settings = Helpers.AppLocalSettings.Current;
                 settings.Values["ViewMode"] = (int)CurrentViewMode;
                 settings.Values["IconSize"] = (int)CurrentIconSize;
                 settings.Values["LeftViewMode"] = (int)LeftViewMode;
@@ -179,7 +179,7 @@ namespace Span.ViewModels
         {
             try
             {
-                var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                var settings = Helpers.AppLocalSettings.Current;
 
                 if (settings.Values.TryGetValue("ViewMode", out var mode) && mode is int modeInt
                     && System.Enum.IsDefined(typeof(ViewMode), modeInt))
@@ -258,7 +258,7 @@ namespace Span.ViewModels
         {
             try
             {
-                var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                var settings = Helpers.AppLocalSettings.Current;
                 settings.Values["IsLeftPreviewEnabled"] = IsLeftPreviewEnabled;
                 settings.Values["IsRightPreviewEnabled"] = IsRightPreviewEnabled;
             }
@@ -275,7 +275,7 @@ namespace Span.ViewModels
         {
             try
             {
-                var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                var settings = Helpers.AppLocalSettings.Current;
                 settings.Values["LeftPreviewWidth"] = leftWidth;
                 settings.Values["RightPreviewWidth"] = rightWidth;
             }
@@ -292,7 +292,7 @@ namespace Span.ViewModels
         {
             try
             {
-                var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                var settings = Helpers.AppLocalSettings.Current;
                 settings.Values["IsSplitViewEnabled"] = IsSplitViewEnabled;
 
                 // Save right pane path for restore on next launch

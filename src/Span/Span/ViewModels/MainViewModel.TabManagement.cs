@@ -773,7 +773,7 @@ namespace Span.ViewModels
         {
             try
             {
-                var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                var settings = Helpers.AppLocalSettings.Current;
                 if (settings.Values.TryGetValue("RightPanePath", out var savedPath) && savedPath is string path)
                 {
                     if (System.IO.Directory.Exists(path))

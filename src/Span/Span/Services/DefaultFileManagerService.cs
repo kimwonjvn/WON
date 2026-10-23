@@ -76,10 +76,11 @@ namespace Span.Services
             }
         }
 
-        // AppExecutionAlias 경로 (WindowsApps에 등록됨)
-        private static readonly string AliasPath =
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Microsoft", "WindowsApps", "spanfinder.exe");
+        // MSIX: AppExecutionAlias 경로 (WindowsApps에 등록됨). 설치 프로그램으로 패키지 없이 설치한 경우: 실제 실행 파일.
+        private static readonly string AliasPath = Helpers.PackageIdentity.IsPackaged
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Microsoft", "WindowsApps", "spanfinder.exe")
+            : Path.Combine(AppContext.BaseDirectory, "Span.exe");
 
         /// <summary>
         /// regedit /s + runas로 기본 파일 관리자 등록.
@@ -176,7 +177,7 @@ namespace Span.Services
                 using var key = Registry.CurrentUser.OpenSubKey(FolderOpenCommandKey);
                 var command = key?.GetValue("")?.ToString();
                 return !string.IsNullOrEmpty(command)
-                    && command.Contains("spanfinder.exe", StringComparison.OrdinalIgnoreCase);
+                    && command.Contains(Path.GetFileName(AliasPath), StringComparison.OrdinalIgnoreCase);
             }
             catch
             {

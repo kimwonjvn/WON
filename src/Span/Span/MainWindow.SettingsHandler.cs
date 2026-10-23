@@ -1102,7 +1102,7 @@ namespace Span
             // Sidebar width: reset custom width on scale change
             try
             {
-                var appSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                var appSettings = Helpers.AppLocalSettings.Current;
                 appSettings.Values.Remove("CustomSidebarWidth");
             }
             catch { }

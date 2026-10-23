@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
-  <!-- asInvoker: the app is installed for the CURRENT user. Only the one step that trusts the certificate
-       is re-launched elevated, so installing as an admin account never installs into the wrong profile. -->
+  <!-- asInvoker: WON is installed for the CURRENT user in their own profile, so no administrator approval is needed. -->
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
     <security>
       <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">

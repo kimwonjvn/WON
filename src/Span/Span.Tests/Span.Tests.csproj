@@ -72,6 +72,7 @@
     <Compile Include="..\Span\Helpers\FolderContextLauncher.cs" Link="Sources\Helpers\FolderContextLauncher.cs" />
     <Compile Include="..\Span\Helpers\HangulSearchHelper.cs" Link="Sources\Helpers\HangulSearchHelper.cs" />
     <Compile Include="..\Span\Helpers\DebugLogger.cs" Link="Sources\Helpers\DebugLogger.cs" />
+    <Compile Include="..\Span\Helpers\AppLocalSettings.cs" Link="Sources\Helpers\AppLocalSettings.cs" />
     <Compile Include="..\Span\Helpers\ZipEntryNameEncoding.cs" Link="Sources\Helpers\ZipEntryNameEncoding.cs" />
     <Compile Include="..\Span\Helpers\ArchivePathHelper.cs" Link="Sources\Helpers\ArchivePathHelper.cs" />
     <Compile Include="..\Span\Helpers\UncPathHelper.cs" Link="Sources\Helpers\UncPathHelper.cs" />

@@ -156,6 +156,7 @@ namespace Span.Services
         /// </summary>
         private static void ApplyPrimaryLanguageOverride(string lang)
         {
+            if (!Helpers.PackageIdentity.IsPackaged) return; // 패키지 없이 설치한 경우 지원되지 않는 API (앱 UI 언어와는 무관)
             try
             {
                 ApplicationLanguages.PrimaryLanguageOverride = lang switch

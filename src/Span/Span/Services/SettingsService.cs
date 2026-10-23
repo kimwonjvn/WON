@@ -11,7 +11,7 @@ namespace Span.Services;
 /// </summary>
 public class SettingsService : ISettingsService
 {
-    private readonly ApplicationDataContainer _localSettings;
+    private readonly Helpers.AppLocalSettings _localSettings;
 
     public event Action<string, object?>? SettingChanged;
 
@@ -32,7 +32,7 @@ public class SettingsService : ISettingsService
     {
         try
         {
-            _localSettings = ApplicationData.Current.LocalSettings;
+            _localSettings = Helpers.AppLocalSettings.Current;
 
             // Probe read to detect corrupted container early
             _ = _localSettings.Values.Count;
@@ -42,7 +42,7 @@ public class SettingsService : ISettingsService
             Helpers.DebugLogger.Log($"[SettingsService] LocalSettings corrupted, attempting selective recovery: {ex.Message}");
             try
             {
-                _localSettings = ApplicationData.Current.LocalSettings;
+                _localSettings = Helpers.AppLocalSettings.Current;
 
                 // v1.5.2 (Discussion #30): 핵심 키 백업 → Clear → 복원.
                 // 이전 동작은 Wipe 후 모든 사용자 설정(온보딩 완료 플래그 포함)을 잃어

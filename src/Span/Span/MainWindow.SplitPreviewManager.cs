@@ -1153,7 +1153,7 @@ namespace Span
         {
             try
             {
-                var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                var settings = Helpers.AppLocalSettings.Current;
 
                 if (ViewModel.IsLeftPreviewEnabled)
                 {
@@ -1188,7 +1188,7 @@ namespace Span
         {
             try
             {
-                var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                var settings = Helpers.AppLocalSettings.Current;
                 if (settings.Values.TryGetValue(key, out var val))
                     return Math.Max(320, (double)val);
             }

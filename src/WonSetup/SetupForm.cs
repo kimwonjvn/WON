@@ -16,6 +16,7 @@ namespace WonSetup
         private readonly Button _install = new Button();
         private readonly Button _close = new Button();
         private readonly CheckBox _launch = new CheckBox();
+        private readonly CheckBox _desktop = new CheckBox();
         private readonly ProgressBar _bar = new ProgressBar();
         private readonly Label _status = new Label();
         private bool _busy;
@@ -24,7 +25,7 @@ namespace WonSetup
         public SetupForm()
         {
             Text = T("WON Setup", "WON 설치");
-            ClientSize = new Size(540, 420);
+            ClientSize = new Size(540, 432);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             StartPosition = FormStartPosition.CenterScreen;
@@ -57,65 +58,70 @@ namespace WonSetup
 
             Controls.Add(new Label
             {
-                Text = T("Installs the WON file explorer for your Windows account. Your existing WON settings are kept.",
-                         "WON 파일 탐색기를 현재 Windows 계정에 설치합니다. 이미 쓰고 있다면 설정은 그대로 유지됩니다."),
-                Location = new Point(28, 108), Size = new Size(484, 40)
+                Text = T("A Finder-style file explorer for Windows. Click Install and it is ready in a moment.",
+                         "윈도우용 파인더 스타일 파일 탐색기입니다. 설치를 누르면 잠시 후 바로 쓸 수 있습니다."),
+                Location = new Point(28, 108), Size = new Size(484, 24)
             });
 
             Controls.Add(new Label
             {
-                Text = T("What happens when you click Install", "설치를 누르면 이렇게 진행됩니다"),
-                Font = new Font("Segoe UI Semibold", 9.5F), Location = new Point(28, 156), AutoSize = true
+                Text = T("Simple and safe", "간단하고 안전합니다"),
+                Font = new Font("Segoe UI Semibold", 9.5F), Location = new Point(28, 144), AutoSize = true
             });
             Controls.Add(new Label
             {
-                Text = T("1. The installer checks that the package is signed by the WON certificate.\n" +
-                         "2. Windows asks for administrator approval once, to trust that certificate (needed because WON is self-signed).\n" +
-                         "3. WON is installed. No other software is installed and nothing is uploaded.",
-                         "1. 설치 파일이 WON 인증서로 서명된 것인지 확인합니다.\n" +
-                         "2. WON이 자체 서명이라, 그 인증서를 신뢰하도록 Windows가 관리자 승인을 한 번 묻습니다.\n" +
-                         "3. WON을 설치합니다. 다른 프로그램은 설치하지 않으며 아무것도 업로드하지 않습니다."),
-                Location = new Point(28, 180), Size = new Size(484, 84), ForeColor = Color.FromArgb(60, 60, 60)
+                Text = T("• No administrator approval and no certificate are needed.\n" +
+                         "• Installed only for your Windows account, in " + Installer.DefaultDirectory + ".\n" +
+                         "• Nothing else is installed and nothing is uploaded. Remove it any time in Settings > Apps.",
+                         "• 관리자 승인도, 인증서 설치도 필요하지 않습니다.\n" +
+                         "• 현재 Windows 계정에만 설치됩니다: " + Installer.DefaultDirectory + "\n" +
+                         "• 다른 프로그램은 설치하지 않고 아무것도 업로드하지 않습니다. 제거는 설정 > 앱에서 언제든 할 수 있습니다."),
+                Location = new Point(28, 168), Size = new Size(484, 80), ForeColor = Color.FromArgb(60, 60, 60)
             });
+
+            _desktop.Text = T("Add a shortcut to the desktop", "바탕화면에 바로가기 만들기");
+            _desktop.Checked = true;
+            _desktop.AutoSize = true;
+            _desktop.Location = new Point(28, 256);
+            Controls.Add(_desktop);
 
             _launch.Text = T("Start WON when finished", "설치가 끝나면 WON 실행");
             _launch.Checked = true;
             _launch.AutoSize = true;
-            _launch.Location = new Point(28, 276);
+            _launch.Location = new Point(28, 280);
             Controls.Add(_launch);
 
-            _bar.Style = ProgressBarStyle.Marquee;
-            _bar.MarqueeAnimationSpeed = 30;
-            _bar.Location = new Point(28, 308);
+            _bar.Style = ProgressBarStyle.Continuous;
+            _bar.Maximum = 1000;
+            _bar.Location = new Point(28, 312);
             _bar.Size = new Size(484, 8);
             _bar.Visible = false;
             Controls.Add(_bar);
 
-            _status.Location = new Point(28, 322);
-            _status.Size = new Size(484, 36);
+            _status.Location = new Point(28, 326);
+            _status.Size = new Size(484, 34);
             Controls.Add(_status);
 
             Controls.Add(new Label
             {
-                Text = T("This installer and app are signed by an individual, so Windows may show an \"unknown publisher\" warning. Install only if you trust where you downloaded it.",
-                         "이 설치 파일과 앱은 개인이 서명한 것이라 Windows가 '알 수 없는 게시자' 경고를 보일 수 있습니다. 내려받은 곳을 신뢰할 때만 설치하세요."),
-                ForeColor = Color.Gray, Font = new Font("Segoe UI", 8F), Location = new Point(28, 366), Size = new Size(290, 44)
+                Text = T("This installer is signed by an individual, so Windows may show an \"unknown publisher\" warning. Install only if you trust where you downloaded it.",
+                         "이 설치 파일은 개인이 서명한 것이라 Windows가 '알 수 없는 게시자' 경고를 보일 수 있습니다. 내려받은 곳을 신뢰할 때만 설치하세요."),
+                ForeColor = Color.Gray, Font = new Font("Segoe UI", 8F), Location = new Point(28, 372), Size = new Size(296, 52)
             });
 
             _install.Text = T("Install", "설치");
             _install.Size = new Size(84, 30);
-            _install.Location = new Point(332 + 28, 372);
+            _install.Location = new Point(334, 384);
             _install.Click += async (s, e) => await RunInstallAsync();
             Controls.Add(_install);
 
             _close.Text = T("Cancel", "취소");
             _close.Size = new Size(84, 30);
-            _close.Location = new Point(428, 372);
+            _close.Location = new Point(428, 384);
             _close.Click += (s, e) => Close();
             Controls.Add(_close);
 
             AcceptButton = _install;
-            _install.Location = new Point(334, 372);
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
@@ -136,38 +142,53 @@ namespace WonSetup
             _status.Text = text;
         }
 
+        private void SetProgress(double fraction)
+        {
+            if (InvokeRequired) { BeginInvoke(new Action(() => SetProgress(fraction))); return; }
+            _bar.Value = Math.Max(0, Math.Min(_bar.Maximum, (int)(fraction * _bar.Maximum)));
+        }
+
         private async Task RunInstallAsync()
         {
             if (_busy) return;
             _busy = true;
             _install.Enabled = false;
             _close.Enabled = false;
+            _desktop.Enabled = false;
+            _launch.Enabled = false;
+            _bar.Value = 0;
             _bar.Visible = true;
 
-            var dir = Path.Combine(Path.GetTempPath(), "WON-setup-" + Guid.NewGuid().ToString("N"));
             Log.Write("install started, version " + Payload.Version);
-            string family = string.Empty;
+            string exe = string.Empty;
+            var options = new InstallOptions { DesktopShortcut = _desktop.Checked };
             try
             {
-                family = await Task.Run(() => InstallCore(dir));
+                exe = await Task.Run(() => Installer.Run(options, s => SetStatus(s), SetProgress, AskCloseRunning, AskRemoveMsix, Ko));
                 _done = true;
                 Log.Write("install finished");
                 SetStatus(T("WON is installed.", "WON 설치가 끝났습니다."));
-                if (_launch.Checked) Installer.LaunchApp(family);
+                if (_launch.Checked) Installer.Launch(exe);
             }
             catch (InstallException ex)
             {
                 Log.Write("InstallException: " + ex.Message);
                 SetStatus(T("Installation failed: ", "설치하지 못했습니다: ") + ex.Message, error: true);
             }
+            catch (Exception ex) when (ex is UnauthorizedAccessException || ex is System.ComponentModel.Win32Exception)
+            {
+                Log.Write("Blocked: " + ex);
+                SetStatus(T("Windows or a security program blocked the installation (", "Windows 또는 보안 프로그램이 설치를 막았습니다(")
+                          + ex.Message + T("). On a company or school PC, ask the administrator to allow WON_Setup.exe. Log: ", "). 회사·학교 PC라면 관리자에게 WON_Setup.exe 허용을 요청해 주세요. 기록: ")
+                          + Path.Combine(Path.GetTempPath(), "WON-setup.log"), error: true);
+            }
             catch (Exception ex)
             {
                 Log.Write("Unexpected: " + ex);
-                SetStatus(T("Unexpected error: ", "예상치 못한 오류: ") + ex.Message, error: true);
+                SetStatus(T("Unexpected error: ", "예상치 못한 오류: ") + ex.Message + "  (" + T("log: ", "기록: ") + Path.Combine(Path.GetTempPath(), "WON-setup.log") + ")", error: true);
             }
             finally
             {
-                try { if (Directory.Exists(dir)) Directory.Delete(dir, true); } catch { }
                 _bar.Visible = false;
                 _busy = false;
                 _close.Enabled = true;
@@ -177,43 +198,38 @@ namespace WonSetup
             }
         }
 
-        private string InstallCore(string dir)
+        private bool AskCloseRunning()
         {
-            Directory.CreateDirectory(dir);
-            var msix = Path.Combine(dir, "WON.msix");
-            var cer = Path.Combine(dir, "WON.cer");
+            bool yes = false;
+            Invoke(new Action(() => yes = MessageBox.Show(this,
+                T("WON is running and must be closed to update. Close it and continue? (Finish any file operation in progress first.)",
+                  "WON이 실행 중이라 닫아야 업데이트할 수 있습니다. 닫고 계속할까요? (진행 중인 파일 작업이 있다면 먼저 끝내 주세요.)"),
+                Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes));
+            return yes;
+        }
 
-            SetStatus(T("Preparing files…", "파일을 준비하는 중…"));
-            Payload.Extract("payload.cer", cer, null);
-            Payload.Extract("payload.msix", msix, p => SetStatus(T("Preparing files… ", "파일을 준비하는 중… ") + (int)(p * 100) + "%"));
-
-            SetStatus(T("Checking the package signature…", "설치 파일의 서명을 확인하는 중…"));
-            Installer.VerifyPackageSignature(msix);
-
-            if (!Installer.IsCertificateTrusted(Payload.ExpectedThumbprint))
-            {
-                SetStatus(T("Waiting for administrator approval to trust the WON certificate…",
-                            "WON 인증서를 신뢰하도록 관리자 승인을 기다리는 중…"));
-                Installer.TrustCertificateElevated(cer);
-                if (!Installer.IsCertificateTrusted(Payload.ExpectedThumbprint))
-                    throw new InstallException(T("The certificate could not be trusted. Administrator rights are required.",
-                                                 "인증서를 신뢰 목록에 올리지 못했습니다. 관리자 권한이 필요합니다."));
-            }
-
-            bool closeApp = false;
-            if (Installer.IsAppRunning())
-            {
-                bool yes = false;
-                Invoke(new Action(() => yes = MessageBox.Show(this,
-                    T("WON is running and must be closed to update. Close it and continue? (Finish any file operation in progress first.)",
-                      "WON이 실행 중이라 닫아야 업데이트할 수 있습니다. 닫고 계속할까요? (진행 중인 파일 작업이 있다면 먼저 끝내 주세요.)"),
-                    Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes));
-                if (!yes) throw new InstallException(T("Close WON and run the installer again.", "WON을 닫고 설치를 다시 실행해 주세요."));
-                closeApp = true;
-            }
-
-            SetStatus(T("Installing WON…", "WON을 설치하는 중…"));
-            return Installer.InstallPackage(msix, closeApp);
+        /// <summary>The previous flavour of WON (installed with a certificate) can stay next to this one, or be removed.</summary>
+        private bool AskRemoveMsix()
+        {
+            bool carry = Installer.SettingsCarryOver();
+            bool remove = false;
+            Invoke(new Action(() => remove = MessageBox.Show(this,
+                T("An older WON that was installed with a certificate was found. Remove it now so there is only one WON?\n\n" +
+                  (carry ? "Your settings are carried over. " : "Some on-screen settings (theme, language, view) will start from their defaults. ") +
+                  "Your favorites, chats and server connections are kept.\n\nChoose No to keep both.",
+                  "인증서로 설치했던 이전 WON이 있습니다. WON이 하나만 남도록 지금 제거할까요?\n\n" +
+                  (carry ? "설정은 그대로 이어집니다. " : "테마·언어·보기 방식 같은 화면 설정은 기본값으로 시작합니다. ") +
+                  "즐겨찾기, 대화 기록, 서버 연결 정보는 그대로 남습니다.\n\n'아니요'를 누르면 둘 다 남겨 둡니다."),
+                Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) == DialogResult.Yes));
+            if (!remove) return false;
+            SetStatus(T("Removing the older WON…", "이전 WON을 제거하는 중…"));
+            var ok = Installer.RemoveMsix();
+            if (!ok)
+                Invoke(new Action(() => MessageBox.Show(this,
+                    T("The older WON could not be removed automatically. You can remove it in Settings > Apps (both can stay installed meanwhile).",
+                      "이전 WON을 자동으로 제거하지 못했습니다. 설정 > 앱에서 직접 제거하실 수 있습니다(그동안 둘 다 설치된 상태로 써도 됩니다)."),
+                    Text, MessageBoxButtons.OK, MessageBoxIcon.Information)));
+            return ok;
         }
     }
 }

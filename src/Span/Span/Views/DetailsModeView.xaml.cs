@@ -68,7 +68,7 @@ namespace Span.Views
         private string _currentSortBy = "Name";
         private bool _isAscending = true;
         private bool _isLoaded = false;
-        private ApplicationDataContainer? _localSettings;
+        private Helpers.AppLocalSettings? _localSettings;
         private SettingsService? _settings;
 
         // 컬럼 너비 동기화 디바운스 — GridSplitter 드래그 시 인접 컬럼 콜백이
@@ -131,7 +131,7 @@ namespace Span.Views
         {
             try
             {
-                _localSettings = ApplicationData.Current.LocalSettings;
+                _localSettings = Helpers.AppLocalSettings.Current;
             }
             catch
             {
@@ -1165,7 +1165,7 @@ namespace Span.Views
         {
             try
             {
-                var composite = new ApplicationDataCompositeValue
+                var composite = new Helpers.SettingsComposite
                 {
                     ["SortColumn"] = _currentSortBy,
                     ["SortAscending"] = _isAscending,
@@ -1189,7 +1189,7 @@ namespace Span.Views
         {
             try
             {
-                if (_localSettings?.Values["DetailsViewSort"] is ApplicationDataCompositeValue composite)
+                if (_localSettings?.Values["DetailsViewSort"] is Helpers.SettingsComposite composite)
                 {
                     if (composite.TryGetValue("SortColumn", out var sortObj) && sortObj is string sortColumn)
                     {
@@ -1426,7 +1426,7 @@ namespace Span.Views
         {
             try
             {
-                if (_localSettings?.Values["DetailsViewSort"] is ApplicationDataCompositeValue composite)
+                if (_localSettings?.Values["DetailsViewSort"] is Helpers.SettingsComposite composite)
                 {
                     if (composite.TryGetValue("DateColumnVisible", out var dateObj) && dateObj is bool dateVis)
                     {

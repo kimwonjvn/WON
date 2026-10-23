@@ -1,10 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    WON_Setup.exe — one-file installer for the signed MSIX.
+    WON_Setup.exe — one-file installer. It needs no administrator approval and no certificate: the app is
+    installed into the user's own profile (%LOCALAPPDATA%\Programs\WON), like Chrome or VS Code do.
     .NET Framework 4.7.2 ships with Windows 10 1809+/11, so users need nothing else installed.
-    Build with tools\build-installer.ps1, which passes the payload and the expected certificate thumbprint:
-      -p:PayloadMsix=...  -p:PayloadCer=...  -p:CertThumbprint=...  -p:AppVersion=x.y.z
+    Build with tools\build-installer.ps1, which passes the payload (a zip of the published app) and the uninstaller:
+      -p:PayloadZip=...  -p:PayloadUninstall=...  -p:AppVersion=x.y.z
   -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -27,21 +28,19 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="..\Span\Span\Assets\app.ico" LogicalName="app.ico" />
-    <EmbeddedResource Include="$(PayloadMsix)" LogicalName="payload.msix" Condition="'$(PayloadMsix)' != ''" />
-    <EmbeddedResource Include="$(PayloadCer)" LogicalName="payload.cer" Condition="'$(PayloadCer)' != ''" />
-    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
-      <_Parameter1>CertThumbprint</_Parameter1>
-      <_Parameter2>$(CertThumbprint)</_Parameter2>
-    </AssemblyAttribute>
+    <EmbeddedResource Include="$(PayloadZip)" LogicalName="payload.zip" Condition="'$(PayloadZip)' != ''" />
+    <EmbeddedResource Include="$(PayloadUninstall)" LogicalName="uninstall.exe" Condition="'$(PayloadUninstall)' != ''" />
   </ItemGroup>
 
   <Target Name="RequirePayload" BeforeTargets="CoreCompile">
-    <Error Condition="'$(PayloadMsix)' == '' Or '$(PayloadCer)' == '' Or '$(CertThumbprint)' == ''"
-           Text="Pass -p:PayloadMsix, -p:PayloadCer and -p:CertThumbprint (use tools\build-installer.ps1)." />
+    <Error Condition="'$(PayloadZip)' == '' Or '$(PayloadUninstall)' == ''"
+           Text="Pass -p:PayloadZip and -p:PayloadUninstall (use tools\build-installer.ps1)." />
   </Target>
 
 </Project>

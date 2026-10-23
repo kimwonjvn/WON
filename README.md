@@ -49,9 +49,13 @@ Nothing is uploaded anywhere: conversion runs on your PC. Office / Hancom / Libr
 
 ## Install / release
 
-Users download **one file**, `WON_Setup_<version>_x64.exe`, from the Releases page and double-click it. It embeds the signed MSIX, checks that the package is signed by the expected WON certificate, asks Windows for administrator approval **once** to trust that self-signed certificate (the only elevated step; the app itself is installed for the current user), installs WON, and can start it. If WON is running it asks before closing it. A log is written to `%TEMP%\WON-setup.log`. It needs nothing else installed (.NET Framework 4.7.2 ships with Windows 10 1809+/11). Managed PCs without admin rights, or with sideloading disabled, will still refuse.
+Users download **one file**, `WON_Setup_<version>_x64.exe`, from the Releases page and double-click it. **No administrator approval and no certificate are needed**: WON is installed into the user's own profile (`%LOCALAPPDATA%\Programs\WON`, like Chrome or VS Code), with a Start menu entry (and an optional desktop shortcut) and an entry in Settings > Apps, so it can be removed there. If WON is running it asks before closing it; upgrading keeps settings and data. A log is written to `%TEMP%\WON-setup.log`. It needs nothing else installed (.NET Framework 4.7.2 ships with Windows 10 1809+/11). Because the installer is signed by an individual, SmartScreen may show an "unknown publisher" notice (More info > Run anyway).
 
-Maintainers: build the signed MSIX (below), then run `toolsuild-installer.ps1 -DistDir <dist> -SigningDir <keys>`; it produces and signs `WON_Setup_<version>_x64.exe` (source in `src/WonSetup`). Attach that exe as the main release asset; the sideload zip stays available for administrators.
+Unattended: `WON_Setup_<version>_x64.exe /S [/D="C:\Tools\WON"] [/NODESKTOP] [/NOLAUNCH]`.
+
+The release also carries `WON_<version>_x64_sideload.zip`: the same app as an MSIX package for administrators who prefer packages (`Install.ps1`, needs the certificate `WON_signing.cer` to be trusted, which requires administrator rights). The installer exe is the normal route.
+
+Maintainers: run `tools\build-installer.ps1 -DistDir <dist> -SigningDir <keys>`. It publishes the app unpackaged (`-p:WonUnpackaged=true`, same sources as the MSIX), zips it, builds the small uninstaller (`src/WonUninstall`) and embeds both in `WON_Setup_<version>_x64.exe` (source in `src/WonSetup`), then signs the exe. Attach that exe as the main release asset. The MSIX (below) is built separately for the sideload zip.
 
 ## Build
 

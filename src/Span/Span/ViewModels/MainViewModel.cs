@@ -1127,7 +1127,7 @@ namespace Span.ViewModels
         {
             try
             {
-                var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                var settings = Helpers.AppLocalSettings.Current;
                 if (settings.Values["DrivesCacheJson"] is string json && !string.IsNullOrEmpty(json))
                 {
                     var drives = JsonSerializer.Deserialize<List<DrivesCacheDto>>(json);
@@ -1166,7 +1166,7 @@ namespace Span.ViewModels
         {
             try
             {
-                var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                var settings = Helpers.AppLocalSettings.Current;
                 var dtos = drives.Select(d => new DrivesCacheDto
                 {
                     Name = d.Name,
@@ -1331,7 +1331,7 @@ namespace Span.ViewModels
         {
             try
             {
-                var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                var settings = Helpers.AppLocalSettings.Current;
                 if (settings.Values["RecentFoldersJson"] is string json && !string.IsNullOrEmpty(json))
                 {
                     var dtos = JsonSerializer.Deserialize<List<RecentFolderDto>>(json);
@@ -1370,7 +1370,7 @@ namespace Span.ViewModels
         {
             try
             {
-                var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                var settings = Helpers.AppLocalSettings.Current;
                 var dtos = RecentFolders.Select(r => new RecentFolderDto { Name = r.Name, Path = r.Path }).ToList();
                 settings.Values["RecentFoldersJson"] = JsonSerializer.Serialize(dtos);
 

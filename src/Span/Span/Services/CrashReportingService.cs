@@ -527,7 +527,7 @@ public sealed class CrashReportingService : IDisposable
     {
         try
         {
-            var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+            var settings = Helpers.AppLocalSettings.Current;
             return settings.Values.TryGetValue("SentryDsn", out var dsn) ? dsn as string : null;
         }
         catch

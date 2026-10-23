@@ -183,7 +183,7 @@ namespace Span.Services
             {
                 var paths = favorites.Select(f => f.Path).ToList();
                 var json = JsonSerializer.Serialize(paths);
-                var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                var settings = Helpers.AppLocalSettings.Current;
                 settings.Values[FavoritesOrderKey] = json;
                 Helpers.DebugLogger.Log($"[FavoritesService] Saved favorites order ({paths.Count} items)");
             }
@@ -201,7 +201,7 @@ namespace Span.Services
         {
             try
             {
-                var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                var settings = Helpers.AppLocalSettings.Current;
                 if (settings.Values.TryGetValue(FavoritesOrderKey, out var raw) && raw is string json)
                 {
                     var savedPaths = JsonSerializer.Deserialize<List<string>>(json);

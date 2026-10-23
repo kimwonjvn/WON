@@ -15,9 +15,18 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
     <!-- Sentry release 정확도 — Package.appxmanifest와 동기화 필요 (수동) -->
-    <Version>2.5.2</Version>
-    <AssemblyVersion>2.5.2.0</AssemblyVersion>
-    <FileVersion>2.5.2.0</FileVersion>
+    <Version>2.6.0</Version>
+    <AssemblyVersion>2.6.0.0</AssemblyVersion>
+    <FileVersion>2.6.0.0</FileVersion>
+  </PropertyGroup>
+
+  <!-- 패키지 없는 설치 프로그램용 빌드 (-p:WonUnpackaged=true): 관리자 권한·인증서 없이 사용자 폴더에 설치된다.
+       MSIX 빌드(기본)와 같은 소스를 쓰며 설정 저장소만 다르다(Helpers/AppLocalSettings.cs). -->
+  <PropertyGroup Condition="'$(WonUnpackaged)' == 'true'">
+    <WindowsPackageType>None</WindowsPackageType>
+    <SelfContained>true</SelfContained>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>

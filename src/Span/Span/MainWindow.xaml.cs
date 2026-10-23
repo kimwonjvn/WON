@@ -654,7 +654,9 @@ namespace Span
             {
 #pragma warning disable CA1416 // Platform compatibility (guarded by try-catch)
                 var iconPath = System.IO.Path.Combine(
-                    Windows.ApplicationModel.Package.Current.InstalledPath,
+                    Helpers.PackageIdentity.IsPackaged
+                        ? Windows.ApplicationModel.Package.Current.InstalledPath
+                        : AppContext.BaseDirectory,
                     "Assets", "app.ico");
 #pragma warning restore CA1416
                 if (System.IO.File.Exists(iconPath))
@@ -1108,7 +1110,7 @@ namespace Span
                     // Restore saved sort/group settings
                     try
                     {
-                        var appSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                        var appSettings = Helpers.AppLocalSettings.Current;
                         if (appSettings.Values.TryGetValue("MillerSortBy", out var sby) && sby is string sortField)
                         {
                             _currentSortField = sortField switch { "DateModified" => "Date", _ => sortField };
@@ -1168,7 +1170,7 @@ namespace Span
         {
             try
             {
-                var appSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                var appSettings = Helpers.AppLocalSettings.Current;
                 if (appSettings.Values.TryGetValue("CustomSidebarWidth", out var saved) && saved is double w)
                 {
                     w = Math.Clamp(w, 150, 400);
@@ -1183,7 +1185,7 @@ namespace Span
         {
             try
             {
-                var appSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                var appSettings = Helpers.AppLocalSettings.Current;
                 appSettings.Values["CustomSidebarWidth"] = width;
             }
             catch { }
@@ -1278,8 +1280,8 @@ namespace Span
                 if (IsIconic(_hwnd) || IsZoomed(_hwnd)) return; // 최소화/최대화 상태는 저장 안 함
                 if (!GetWindowRect(_hwnd, out var rect)) return;
 
-                var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
-                var composite = new Windows.Storage.ApplicationDataCompositeValue
+                var settings = Helpers.AppLocalSettings.Current;
+                var composite = new Helpers.SettingsComposite
                 {
                     ["X"] = rect.Left,
                     ["Y"] = rect.Top,
@@ -1305,8 +1307,8 @@ namespace Span
         {
             try
             {
-                var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
-                if (settings.Values["WindowPlacement"] is not Windows.Storage.ApplicationDataCompositeValue composite)
+                var settings = Helpers.AppLocalSettings.Current;
+                if (settings.Values["WindowPlacement"] is not Helpers.SettingsComposite composite)
                     return;
 
                 if (composite.TryGetValue("X", out var xObj) && xObj is int x &&
@@ -1427,6 +1429,8 @@ namespace Span
                     ViewModel.SaveActiveTabState();
                     ViewModel.SaveTabsToSettings();
                     SaveShelfToSettings();
+                    // MSIX 로 쓰는 경우 설정 사본을 남겨 둔다(패키지 없는 설치로 옮길 때 이어받음).
+                    Helpers.AppLocalSettings.MirrorPackagedToFile();
                 }
 
                 // FileSystemWatcher 정리
@@ -2985,7 +2989,7 @@ namespace Span
                         double savedWidth = 320;
                         try
                         {
-                            var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                            var settings = Helpers.AppLocalSettings.Current;
                             if (settings.Values.TryGetValue("LeftPreviewWidth", out var lw))
                                 savedWidth = Math.Max(320, (double)lw);
                         }
@@ -7348,7 +7352,7 @@ namespace Span
             // 설정 저장
             try
             {
-                var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                var settings = Helpers.AppLocalSettings.Current;
                 settings.Values["ViewGroupBy"] = groupBy;
             }
             catch { }

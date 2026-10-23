@@ -985,7 +985,7 @@ namespace Span.ViewModels
             s_sortSettingsLoaded = true;
             try
             {
-                var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                var settings = Helpers.AppLocalSettings.Current;
                 if (settings.Values.TryGetValue("MillerSortBy", out var sortObj) && sortObj is string sortBy)
                     s_defaultSortBy = sortBy;
                 if (settings.Values.TryGetValue("MillerSortAsc", out var ascObj) && ascObj is bool asc)
@@ -1042,7 +1042,7 @@ namespace Span.ViewModels
             {
                 s_defaultSortBy = sortBy;
                 s_defaultSortAscending = ascending;
-                var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                var settings = Helpers.AppLocalSettings.Current;
                 settings.Values["MillerSortBy"] = sortBy;
                 settings.Values["MillerSortAsc"] = ascending;
             }
