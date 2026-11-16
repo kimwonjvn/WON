@@ -394,6 +394,15 @@ public class SettingsService : ISettingsService
         set => Set("AutoFitColumnWidth", value);
     }
 
+    /// <summary>
+    /// 분할 뷰 방향 (WON). 0 = 좌우 2열(나란히), 1 = 위아래 2행.
+    /// </summary>
+    public int SplitOrientation
+    {
+        get => Get("SplitOrientation", 0);
+        set => Set("SplitOrientation", value);
+    }
+
     // ── Per-tab startup settings ──
 
     public int Tab1StartupBehavior

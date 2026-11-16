@@ -571,6 +571,15 @@ namespace Span
                 Helpers.DebugLogger.Log($"[HandlePaste] Miller: GetCurrentColumnIndex={activeIndex}, columns.Count={columns.Count}");
                 if (activeIndex < 0 || activeIndex >= columns.Count) return;
 
+                // 마우스로 선택한 폴더가 아직 그 열의 선택 항목이면, 포커스가 더 깊은 열에 있어도
+                // 가장 깊은 열이 아니라 그 폴더에 붙여넣는다.
+                if (_mouseSelectedColumn != null && _mouseSelectedFolder != null)
+                {
+                    int mouseIndex = columns.IndexOf(_mouseSelectedColumn);
+                    if (mouseIndex >= 0 && ReferenceEquals(_mouseSelectedColumn.SelectedChild, _mouseSelectedFolder))
+                        activeIndex = mouseIndex;
+                }
+
                 var col = columns[activeIndex];
 
                 // Issue #49: 선택된 항목이 폴더면 그 폴더가 붙여넣기 대상 (Windows Explorer 동작).

@@ -736,6 +736,9 @@ namespace Span
 
             // Initialize Git status bars
             InitializeGitStatusBars();
+
+            // 분할 뷰 방향(좌우/위아래) 배치 연결
+            InitializeSplitLayout();
         }
 
         /// <summary>
@@ -823,14 +826,17 @@ namespace Span
             {
                 if (visible)
                 {
-                    if (LeftPreviewCol.Width.Value < 1)
+                    if (LeftPreviewCol.Width.Value < 1 && !_leftPreviewOverlay)
                     {
                         LeftPreviewSplitterCol.Width = new GridLength(2, GridUnitType.Pixel);
                         LeftPreviewCol.Width = new GridLength(GetSavedPreviewWidth("LeftPreviewWidth"), GridUnitType.Pixel);
                     }
+                    // 빈 공간이 있으면 열을 밀지 않고 오버레이, 없으면 옆 컬럼 유지
+                    ApplyLeftPreviewPlacement();
                 }
                 else
                 {
+                    ResetLeftPreviewPlacement();
                     LeftPreviewSplitterCol.Width = new GridLength(0);
                     LeftPreviewCol.Width = new GridLength(0);
                     LeftPreviewPanel.StopMedia();

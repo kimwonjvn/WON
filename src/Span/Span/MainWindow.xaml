@@ -318,7 +318,8 @@
                     <Rectangle Width="1" Height="20" Fill="{ThemeResource SpanBorderSubtleBrush}" Margin="4,0"
                                Visibility="{x:Bind IsNotSplitVisible(ViewModel.IsSplitViewEnabled), Mode=OneWay}"/>
                     <Button x:Name="SplitViewButton" AutomationProperties.AutomationId="Button_SplitView" Style="{StaticResource UnifiedButtonStyle}"
-                            ToolTipService.ToolTip="Split View (Ctrl+Shift+E)" Click="OnSplitViewToggleClick"
+                            ToolTipService.ToolTip="Split View (Ctrl+Shift+E) — 우클릭: 좌우 2열 / 위아래 2행" Click="OnSplitViewToggleClick"
+                            RightTapped="OnSplitViewButtonRightTapped"
                             Visibility="{x:Bind IsNotSpecialMode(ViewModel.CurrentViewMode), Mode=OneWay}">
                         <FontIcon x:Name="SplitViewIcon" FontFamily="{StaticResource RemixIcons}" Glyph="{StaticResource Icon_SplitView}" FontSize="16"/>
                     </Button>
@@ -895,7 +896,11 @@
 
 
             <!-- Content (Split View Container) -->
-            <Grid Grid.Column="2" Background="Transparent">
+            <Grid x:Name="SplitContentGrid" Grid.Column="2" Background="Transparent">
+                <Grid.RowDefinitions>
+                    <RowDefinition x:Name="SplitRow0" Height="*"/>
+                    <RowDefinition x:Name="SplitRow1" Height="0"/>
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition x:Name="SplitterCol" Width="0"/>
@@ -1813,7 +1818,7 @@
                 </Grid>
 
                 <!-- Split divider (RightPaneContainer의 Margin="1,0,0,0"으로 생긴 1px 갭에 배치) -->
-                <Border Grid.Column="2" Width="1" HorizontalAlignment="Left" IsHitTestVisible="False"
+                <Border x:Name="SplitDivider" Grid.Column="2" Width="1" HorizontalAlignment="Left" IsHitTestVisible="False"
                         Background="{ThemeResource SpanAccentDimBrush}"
                         Visibility="{x:Bind IsSplitVisible(ViewModel.IsSplitViewEnabled), Mode=OneWay}"/>
             </Grid>

@@ -883,6 +883,7 @@ namespace Span
 
                         // ── 밀러컬럼 뷰포트 리사이즈 시 마지막 컬럼으로 자동 스크롤 ──
                         MillerScrollViewer.SizeChanged += OnMillerScrollViewerSizeChanged;
+                        MillerColumnsControl.SizeChanged += OnMillerItemsSizeChangedForPreview;
 
                         // Set tab bar as passthrough so pointer events work for tear-off
                         UpdateTitleBarRegions();
@@ -4951,9 +4952,11 @@ namespace Span
 
                 int idx = columns.IndexOf(column);
                 bool canClose = idx >= 0 && idx < columns.Count - 1;
+                // 해당 열 닫기: 이 열과 그 오른쪽(하위) 열을 모두 닫는다. 첫 번째 열(루트)은 닫을 수 없다.
+                bool canCloseThis = idx >= 1;
                 bool canOpenParents = false;
                 for (int i = 0; i < idx; i++) if (columns[i].IsColumnCollapsed) { canOpenParents = true; break; }
-                if (!canClose && !canOpenParents) return;
+                if (!canClose && !canCloseThis && !canOpenParents) return;
 
                 if (flyout.Items.Count > 0) flyout.Items.Add(new MenuFlyoutSeparator());
 
@@ -4973,6 +4976,36 @@ namespace Span
                         for (int i = 0; i <= idx && i < columns.Count; i++) columns[i].IsColumnCollapsed = true;
                     };
                     flyout.Items.Add(closeItem);
+                }
+                if (canCloseThis)
+                {
+                    var closeThisItem = new MenuFlyoutItem
+                    {
+                        Text = _loc.Get("Column_CloseThis") ?? "Close this column",
+                        Icon = new FontIcon { Glyph = "", FontSize = 14 },
+                        FontSize = 12,
+                        Padding = new Thickness(10, 2, 10, 2),
+                        MinHeight = 24
+                    };
+                    // 이 열과 오른쪽(하위) 열을 모두 닫는다: 바로 위 열의 선택을 해제하면
+                    // ExplorerViewModel이 하위 열을 제거하고 현재 경로를 위 열로 되돌린다.
+                    closeThisItem.Click += (_, _) =>
+                    {
+                        try
+                        {
+                            if (idx >= 1 && idx < columns.Count)
+                            {
+                                var parent = columns[idx - 1];
+                                if (parent.IsColumnCollapsed) parent.IsColumnCollapsed = false;
+                                parent.SelectedChild = null;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Helpers.DebugLogger.Log($"[ColumnFold] CloseThis error: {ex.Message}");
+                        }
+                    };
+                    flyout.Items.Add(closeThisItem);
                 }
                 if (canOpenParents)
                 {
@@ -5428,6 +5461,10 @@ namespace Span
         /// 빈 공간(ListViewItem 외) 클릭 시 해당 컬럼의 ListView에 키보드 포커스를 이동하여,
         /// 시각적 선택 표시(파란 테두리)와 실제 키보드 포커스를 동기화한다.
         /// </summary>
+        // 마우스로 마지막에 선택한 폴더와 그 폴더가 들어 있는 열 (붙여넣기 대상 결정용).
+        private FolderViewModel? _mouseSelectedColumn;
+        private FolderViewModel? _mouseSelectedFolder;
+
         private void OnMillerColumnPointerPressed(object sender, PointerRoutedEventArgs e)
         {
             if (sender is not Grid grid) return;
@@ -5464,7 +5501,22 @@ namespace Span
                     var src = e.OriginalSource as DependencyObject;
                     while (src != null && src != grid)
                     {
-                        if (src is ListViewItem) { clickedOnItem = true; break; }
+                        if (src is ListViewItem clickedLvi)
+                        {
+                            clickedOnItem = true;
+                            // 마우스로 선택한 폴더를 기억 — Ctrl+V가 가장 깊은 열이 아닌 이 폴더로 붙여넣도록 한다.
+                            if (clickedLvi.Content is FolderViewModel clickedFolder)
+                            {
+                                _mouseSelectedColumn = folderVm;
+                                _mouseSelectedFolder = clickedFolder;
+                            }
+                            else
+                            {
+                                _mouseSelectedColumn = null;
+                                _mouseSelectedFolder = null;
+                            }
+                            break;
+                        }
                         src = VisualTreeHelper.GetParent(src);
                     }
                     if (!clickedOnItem)

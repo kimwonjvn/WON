@@ -212,6 +212,7 @@ namespace Span
 
             // 뷰포트 리사이즈 시 마지막 컬럼으로 자동 스크롤
             scrollViewer.SizeChanged += OnMillerScrollViewerSizeChanged;
+            itemsControl.SizeChanged += OnMillerItemsSizeChangedForPreview;
             // Issue #57: 스크롤 시 잔여 spacer 실시간 트리밍 (공백 구간 스크롤 차단)
             scrollViewer.ViewChanged += OnMillerViewChangedTrimSpacer;
 

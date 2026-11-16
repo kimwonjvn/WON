@@ -1337,6 +1337,9 @@ namespace Span
 
         #region Column Resize Grip Handlers (Miller Columns drag-to-resize)
 
+        /// <summary>Miller 열 최대 폭(px). 긴 파일 이름의 확장자까지 볼 수 있도록 넉넉히 허용한다.</summary>
+        private const double MaxMillerColumnWidth = 2400;
+
         /// <summary>
         /// 컬럼 리사이즈 그립에 마우스 진입 시 수평 리사이즈 커서를 표시한다.
         /// </summary>
@@ -1387,7 +1390,7 @@ namespace Span
                 double currentX = e.GetCurrentPoint(null).Position.X;
                 double delta = currentX - _resizeStartX;
                 double newWidth = Math.Max(150, _resizeStartWidth + delta);
-                newWidth = Math.Min(600, newWidth); // max width cap
+                newWidth = Math.Min(MaxMillerColumnWidth, newWidth); // max width cap
                 _resizingColumnGrid.Width = newWidth;
 
                 // Ctrl+drag: apply the same width to ALL columns simultaneously
@@ -1501,7 +1504,7 @@ namespace Span
         /// <summary>
         /// Measure the ideal width for a column based on its content.
         /// Estimates text width from item display names plus icon/padding/chevron.
-        /// Returns clamped width between 120 and 600 pixels.
+        /// Returns clamped width between 120 and MaxMillerColumnWidth pixels.
         /// </summary>
         private double MeasureColumnContentWidth(FolderViewModel column)
         {
@@ -1513,7 +1516,7 @@ namespace Span
             const double gripWidth = 4;           // resize grip
             const double scrollBarBuffer = 8;     // scrollbar safety margin
             const double minWidth = 120;
-            const double maxWidth = 600;
+            const double maxWidth = MaxMillerColumnWidth;
 
             double maxItemWidth = 0;
 
@@ -1565,7 +1568,7 @@ namespace Span
         /// </summary>
         private void ApplyWidthToAllColumns(double width)
         {
-            width = Math.Clamp(width, 150, 600);
+            width = Math.Clamp(width, 150, MaxMillerColumnWidth);
 
             var control = GetActiveMillerColumnsControl();
             var columns = ViewModel.ActiveExplorer.Columns;
